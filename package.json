@@ -17,17 +17,17 @@
     "url": "git+https://github.com/mitchdzugan/dz__DOLLAR_SIGN__.ts.git"
   },
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./node": {
-      "import": "./dist/node.js",
-      "types": "./dist/node.d.ts"
+      "import": "./dist/node.mjs",
+      "types": "./dist/node.d.mts"
     }
   },
   "scripts": {
