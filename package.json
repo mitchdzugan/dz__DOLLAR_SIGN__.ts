@@ -17,7 +17,6 @@
     "url": "git+https://github.com/mitchdzugan/dz__DOLLAR_SIGN__.ts.git"
   },
   "type": "module",
-  "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "exports": {
