@@ -1,20 +1,20 @@
 {
-  "name": "@arobsn/tslib-template",
-  "version": "0.1.0",
-  "description": "A modern and minimal TypeScript library template",
-  "author": "Alison Oliveira <arobsn@proton.me>",
+  "name": "@dz/$",
+  "version": "0.0.1",
+  "description": "typescript utility library",
+  "author": "Mitch Dzugan <mitchdzugan@gmail.com>",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "license": "MIT",
-  "homepage": "https://github.com/arobsn/tslib-template#readme",
+  "homepage": "https://github.com/mitchdzugan/dz__DOLLAR_SIGN__.ts#readme",
   "bugs": {
-    "url": "https://github.com/arobsn/tslib-template/issues"
+    "url": "https://github.com/mitchdzugan/dz__DOLLAR_SIGN__.ts/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/arobsn/tslib-template.git"
+    "url": "git+https://github.com/mitchdzugan/dz__DOLLAR_SIGN__.ts.git"
   },
   "type": "module",
   "main": "./dist/index.js",
