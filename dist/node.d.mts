@@ -5,8 +5,10 @@ import * as events97 from "events";
 
 //#region src/node.d.ts
 declare function imageToBase64DataUrl(filePath: string, mimeType: string): Promise<string>;
+declare function exists(path: string): Promise<boolean>;
 declare const fs: {
   imageToBase64DataUrl: typeof imageToBase64DataUrl;
+  exists: typeof exists;
   access(path: fs0.PathLike, mode?: number): Promise<void>;
   copyFile(src: fs0.PathLike, dest: fs0.PathLike, mode?: number): Promise<void>;
   open(path: fs0.PathLike, flags?: string | number, mode?: fs0.Mode): Promise<nodeFs.FileHandle>;

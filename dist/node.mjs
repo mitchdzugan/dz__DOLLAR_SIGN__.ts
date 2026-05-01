@@ -7,9 +7,18 @@ async function imageToBase64DataUrl(filePath, mimeType) {
 	const dataUrl = `data:${mimeType};base64,${base64Image}`;
 	return dataUrl;
 }
+async function exists(path) {
+	try {
+		await fs.access(path);
+		return true;
+	} catch (err) {
+		return false;
+	}
+}
 const fs = {
 	...nodeFs,
-	imageToBase64DataUrl
+	imageToBase64DataUrl,
+	exists
 };
 
 //#endregion

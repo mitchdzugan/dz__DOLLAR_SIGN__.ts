@@ -1,6 +1,114 @@
+import { __export } from "./chunk-B9dir_RE.mjs";
 import { Character } from "@slippi/slippi-js";
 
-//#region src/index.ts
+//#region src/id.ts
+var id_exports = {};
+__export(id_exports, { of: () => of });
+function b6Char(n) {
+	const mLookup = [
+		"0",
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"9",
+		"a",
+		"b",
+		"c",
+		"d",
+		"e",
+		"f",
+		"g",
+		"h",
+		"i",
+		"j",
+		"k",
+		"l",
+		"m",
+		"n",
+		"o",
+		"p",
+		"q",
+		"r",
+		"s",
+		"t",
+		"u",
+		"v",
+		"w",
+		"x",
+		"y",
+		"z",
+		"A",
+		"B",
+		"C",
+		"D",
+		"E",
+		"F",
+		"G",
+		"H",
+		"I",
+		"J",
+		"K",
+		"L",
+		"M",
+		"N",
+		"O",
+		"P",
+		"Q",
+		"R",
+		"S",
+		"T",
+		"U",
+		"V",
+		"W",
+		"X",
+		"Y",
+		"Z",
+		"-"
+	];
+	return mLookup[n] || "_";
+}
+function b8sToB6s(...b8s) {
+	const res = [];
+	const incoming = [...b8s];
+	incoming.reverse();
+	for (let i = 0; i < incoming.length; i++) {
+		const b0 = Math.pow(256, 0) * (incoming[i + 0] || 0);
+		const b1 = Math.pow(256, 1) * (incoming[i + 1] || 0);
+		const b2 = Math.pow(256, 2) * (incoming[i + 2] || 0);
+		let v = b0 + b1 + b2;
+		for (let j = 0; j < 4; j++) {
+			res.push(v % 64);
+			v = Math.floor(v / 64);
+		}
+	}
+	res.reverse();
+	let start = 0;
+	while (start < 4 && !res[start]) start++;
+	return res.slice(start);
+}
+function strIdStr(s) {
+	const encoder = new TextEncoder();
+	return b8sToB6s(...encoder.encode(s)).map((n) => b6Char(n)).join("");
+}
+const OF_LITERALS = /* @__PURE__ */ new Map();
+OF_LITERALS.set(void 0, "U");
+OF_LITERALS.set(null, "0");
+OF_LITERALS.set(true, "t");
+OF_LITERALS.set(false, "f");
+function of(v) {
+	const litVal = OF_LITERALS.get(v);
+	if (litVal) return litVal;
+	else if (typeof v === "number") return `N${strIdStr(`${v}`)}`;
+	else return `S${strIdStr(v)}`;
+}
+
+//#endregion
+//#region src/core.ts
 function $(k) {
 	return (t) => t[k];
 }
@@ -103,4 +211,192 @@ function firsty(...args) {
 }
 
 //#endregion
-export { $, $$, $$_, SSBM, _map, _or, _without, execAndExit, firsty, isNil, isNotNil, timeout, withInd };
+//#region src/incremental.ts
+var incremental_exports = {};
+__export(incremental_exports, { Ider: () => Ider });
+function idKey(id) {
+	const valueString = id ? `${id}` : "";
+	const typeString = `${typeof id}`;
+	return `${typeString}|${valueString}`;
+}
+const optCase = (onSome, onNone) => (nilable) => {
+	if (nilable !== void 0 && nilable !== null) return onSome(nilable);
+	else return onNone();
+};
+var OptClass = class OptClass {
+	#isNil;
+	#nilable;
+	constructor(nilable = void 0) {
+		this.#nilable = nilable;
+		this.#isNil = optCase(() => false, () => true)(nilable);
+	}
+	get isEmpty() {
+		return this.#isNil;
+	}
+	case(onSome, onNone) {
+		return optCase(onSome, onNone)(this.#nilable);
+	}
+	map(f) {
+		return this.case((v) => new OptClass(f(v)), () => new OptClass());
+	}
+	bind(f) {
+		return this.case((v) => f(v), () => new OptClass());
+	}
+	join(rhs) {
+		return this.bind((l) => rhs.map((r) => [l, r]));
+	}
+};
+function Opt(t) {
+	return new OptClass(t);
+}
+var BaseDict_r = class {
+	constructor() {}
+	key(_k) {
+		throw "unimplemented";
+	}
+	[Symbol.iterator]() {
+		throw "unimplemented";
+	}
+	lookup(_k) {
+		throw "unimplemented";
+	}
+	mutate(_mutater) {
+		throw "unimplemented";
+	}
+	get src() {
+		throw "unimplemented";
+	}
+	get changes() {
+		throw "unimplemented";
+	}
+	get changed() {
+		return this.changes.length > 0;
+	}
+};
+var MutatedDict = class MutatedDict extends BaseDict_r {
+	#base;
+	#mutations;
+	#iterated;
+	constructor(base, mutater) {
+		super();
+		this.#base = base;
+		this.#mutations = {};
+		mutater({
+			delete: (k) => this.delete(k),
+			set: (k, v) => this.set(k, v)
+		});
+	}
+	key(k) {
+		return this.#base.key(k);
+	}
+	addMutation(k, m) {
+		const id = this.key(k);
+		const currMutation = this.#mutations[id];
+		if (currMutation) {
+			currMutation[3].push(currMutation[2]);
+			currMutation[2] = m;
+		} else this.#mutations[id] = [
+			k,
+			this.lookup(k),
+			m,
+			[]
+		];
+	}
+	delete(k) {
+		this.addMutation(k, ["del"]);
+	}
+	set(k, v) {
+		this.addMutation(k, ["set", v]);
+	}
+	[Symbol.iterator]() {
+		const self = this;
+		const cachedIterated = self.#iterated;
+		if (cachedIterated) return function* () {
+			for (const next of cachedIterated) yield next;
+		}();
+		const base = this.#base;
+		const mutations = this.#mutations;
+		const setIterated = (iterated) => this.#iterated = iterated;
+		return function* () {
+			const iterated = [];
+			for (const next of base) {
+				const [k] = next;
+				const key = base.key(k);
+				const mutation = mutations[key];
+				if (!mutation) {
+					iterated.push(next);
+					yield next;
+				}
+			}
+			for (const [k, _v, [mutationType, v]] of Object.values(mutations)) {
+				if (mutationType === "del") continue;
+				const next = [k, v];
+				iterated.push(next);
+				yield next;
+			}
+			setIterated(iterated);
+		}();
+	}
+	lookup(k) {
+		const id = this.key(k);
+		return Opt(void 0);
+	}
+	mutate(mutater) {
+		return new MutatedDict(this, mutater);
+	}
+};
+var PureDict_r = class extends BaseDict_r {
+	#data = {};
+	#idImplK;
+	constructor(idImplK, entries) {
+		super();
+		this.#idImplK = idImplK;
+		for (const [k, v] of entries) this.#data[this.key(k)] = [k, v];
+	}
+	key(k) {
+		return idKey(this.#idImplK(k));
+	}
+	[Symbol.iterator]() {
+		const self = this;
+		return function* () {
+			for (const k in self.#data) {
+				const val = self.#data[k];
+				if (val) yield val;
+			}
+		}();
+	}
+	lookup(k) {
+		const id = this.key(k);
+		return Opt(this.#data[id]).map((entry) => entry[1]);
+	}
+	get src() {
+		return this;
+	}
+	get changes() {
+		return [];
+	}
+	mutate(mutater) {
+		return new MutatedDict(this, mutater);
+	}
+};
+var IderClass = class {
+	#toId;
+	constructor(toId) {
+		this.#toId = toId;
+	}
+	Dict(...entries) {
+		return new PureDict_r(this.#toId, entries);
+	}
+};
+function Ider(f) {
+	return new IderClass(f);
+}
+const NumIder = Ider((i) => i);
+console.log("intDict!!!");
+console.log(...NumIder.Dict([1, 5], [2, 3]).mutate(($$1) => {
+	$$1.set(1, 2);
+	$$1.delete(2);
+}));
+
+//#endregion
+export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, SSBM, _map, _or, _without, execAndExit, firsty, isNil, isNotNil, timeout, withInd };

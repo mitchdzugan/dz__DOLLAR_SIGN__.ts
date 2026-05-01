@@ -7,7 +7,17 @@ async function imageToBase64DataUrl(filePath: string, mimeType: string) {
   return dataUrl;
 }
 
+async function exists(path: string): Promise<boolean> {
+  try {
+    await fs.access(path);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 export const fs = {
   ...nodeFs,
   imageToBase64DataUrl,
+  exists,
 };
