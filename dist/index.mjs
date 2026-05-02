@@ -129,11 +129,15 @@ const setCharById = charRecordRowSetter("__charById");
 const setCharBySlippiApiName = charRecordRowSetter("__charBySlippiApiName");
 const getCharById = charRecordRowGetter("__charById");
 const getCharBySlippiApiName = charRecordRowGetter("__charBySlippiApiName");
-function buildSsbmChar(id, name, slippiApiName) {
+function buildSsbmChar(id, name, slippiApiName, opts = {}) {
 	return {
+		preferCSP: false,
+		meleeCSPFilename: name,
+		meleeCSPDirname: opts.meleeCSPFilename || name,
 		id,
 		name,
-		slippiApiName
+		slippiApiName,
+		...opts
 	};
 }
 const ssbmChar = (...args) => {

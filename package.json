@@ -24,6 +24,10 @@
       "import": "./dist/index.mjs",
       "types": "./dist/index.d.mts"
     },
+    "./YoutubeClip": {
+      "import": "./dist/YoutubeClip.mjs",
+      "types": "./dist/YoutubeClip.d.mts"
+    },
     "./node": {
       "import": "./dist/node.mjs",
       "types": "./dist/node.d.mts"
@@ -66,6 +70,12 @@
     "minimal"
   ],
   "dependencies": {
-    "@slippi/slippi-js": "^9.1.1"
+    "@slippi/slippi-js": "^9.1.1",
+    "@types/react": "^19.2.14",
+    "@types/youtube-player": "^5.5.11",
+    "classnames": "^2.5.1",
+    "re-resizable": "^6.11.2",
+    "react": "^19.2.5",
+    "youtube-player": "^5.6.0"
   }
 }

@@ -23,6 +23,9 @@ export type SSBMChar = {
   id: number;
   name: string;
   slippiApiName: string;
+  preferCSP: boolean;
+  meleeCSPDirname: string;
+  meleeCSPFilename: string;
 };
 
 const charRecordGetter = (recName: string) => () => {
@@ -43,12 +46,26 @@ const setCharBySlippiApiName = charRecordRowSetter("__charBySlippiApiName");
 const getCharById = charRecordRowGetter("__charById");
 const getCharBySlippiApiName = charRecordRowGetter("__charBySlippiApiName");
 
+type SSBMCharOpts = Partial<{
+  preferCSP: boolean;
+  meleeCSPDirname: string;
+  meleeCSPFilename: string;
+}>;
 function buildSsbmChar(
   id: number,
   name: string,
   slippiApiName: string,
+  opts: SSBMCharOpts = {},
 ): SSBMChar {
-  return { id, name, slippiApiName };
+  return {
+    preferCSP: false,
+    meleeCSPFilename: name,
+    meleeCSPDirname: opts.meleeCSPFilename || name,
+    id,
+    name,
+    slippiApiName,
+    ...opts,
+  };
 }
 
 const ssbmChar: typeof buildSsbmChar = (...args) => {
@@ -73,6 +90,7 @@ export const SSBM = {
       Character.GAME_AND_WATCH,
       "Mr. Game & Watch",
       "GAME_AND_WATCH",
+      { meleeCSPFilename: "Mr. Game and Watch" },
     ),
     Kirby: ssbmChar(Character.KIRBY, "Kirby", "KIRBY"),
     Bowser: ssbmChar(Character.BOWSER, "Bowser", "BOWSER"),
@@ -88,8 +106,12 @@ export const SSBM = {
     Puff: ssbmChar(Character.JIGGLYPUFF, "Jigglypuff", "JIGGLYPUFF"),
     Samus: ssbmChar(Character.SAMUS, "Samus", "SAMUS"),
     Yoshi: ssbmChar(Character.YOSHI, "Yoshi", "YOSHI"),
-    Zelda: ssbmChar(Character.ZELDA, "Zelda", "ZELDA"),
-    Sheik: ssbmChar(Character.SHEIK, "Sheik", "SHEIK"),
+    Zelda: ssbmChar(Character.ZELDA, "Zelda", "ZELDA", {
+      meleeCSPDirname: "Zelda and Sheik",
+    }),
+    Sheik: ssbmChar(Character.SHEIK, "Sheik", "SHEIK", {
+      meleeCSPDirname: "Zelda and Sheik",
+    }),
     Falco: ssbmChar(Character.FALCO, "Falco", "FALCO"),
     YLink: ssbmChar(Character.YOUNG_LINK, "Young Link", "YOUNG_LINK"),
     Doc: ssbmChar(Character.DR_MARIO, "Dr. Mario", "DR_MARIO"),

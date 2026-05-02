@@ -11,6 +11,9 @@ type SSBMChar = {
   id: number;
   name: string;
   slippiApiName: string;
+  preferCSP: boolean;
+  meleeCSPDirname: string;
+  meleeCSPFilename: string;
 };
 declare const SSBM: {
   Char: {
