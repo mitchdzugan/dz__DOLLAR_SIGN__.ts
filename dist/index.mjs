@@ -580,4 +580,10 @@ function onInterrupt(f) {
 	};
 }
 //#endregion
-export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
+//#region src/proxy.ts
+var proxy_exports = /* @__PURE__ */ __exportAll({ Of: () => Of });
+function Of() {
+	return { __typeRef: (t) => t };
+}
+//#endregion
+export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, proxy_exports as Proxy, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };

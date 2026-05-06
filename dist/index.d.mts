@@ -214,5 +214,11 @@ declare class InterruptManager {
 }
 declare function onInterrupt(f: (util: UtilClass) => Promise<void>): () => void;
 type InterruptUtil = UtilClass;
+type Proxy<T> = {
+  __typeRef: (t: T) => T;
+};
+type Of<T> = Proxy<T>;
+type Unwrap<T extends Proxy<any>> = ReturnType<T["__typeRef"]>;
+declare function Of<T>(): Proxy<T>;
 //#endregion
-export { $, $$, $$_, E, EA, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, M$, Nil, Nilable, NonNil, R$1 as R, RA, RE, REA, RS, RSA, RW, RWA, RWSE, RWSEA, S, SA, SSBM, SSBMChar, Stack, W, WA, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
+export { $, $$, $$_, E, EA, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, M$, Nil, Nilable, NonNil, proxy_d_exports as Proxy, R$1 as R, RA, RE, REA, RS, RSA, RW, RWA, RWSE, RWSEA, S, SA, SSBM, SSBMChar, Stack, W, WA, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
