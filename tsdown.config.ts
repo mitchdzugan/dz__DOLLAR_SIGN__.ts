@@ -11,6 +11,7 @@ export default defineConfig([
   {
     entry: ["src/YoutubeClip.tsx"],
     dts: true,
+    clean: true,
     format: ["esm"],
     hash: false,
     fixedExtension: true,
