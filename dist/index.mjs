@@ -1,4 +1,4 @@
-import { t as __exportAll } from "./chunk-CfYAbeIz.mjs";
+import { t as __exportAll } from "./chunk.mjs";
 import { Character } from "@slippi/slippi-js";
 import { create } from "mutative";
 //#region src/id.ts
