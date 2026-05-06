@@ -20,4 +20,5 @@ export const fs = {
   ...nodeFs,
   imageToBase64DataUrl,
   exists,
+  readString: (p: string) => fs.readFile(p, "utf-8"),
 };

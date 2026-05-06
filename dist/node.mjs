@@ -15,7 +15,8 @@ async function exists(path) {
 const fs = {
 	...nodeFs,
 	imageToBase64DataUrl,
-	exists
+	exists,
+	readString: (p) => fs.readFile(p, "utf-8")
 };
 //#endregion
 export { fs };

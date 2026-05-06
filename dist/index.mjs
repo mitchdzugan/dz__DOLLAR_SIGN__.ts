@@ -533,4 +533,51 @@ console.log(...NumIder.Dict([1, 5], [2, 3]).mutate(($) => {
 	$.delete(2);
 }));
 //#endregion
-export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
+//#region src/interrupt.ts
+var interrupt_exports = /* @__PURE__ */ __exportAll({ onInterrupt: () => onInterrupt });
+let nextInterruptId = 1;
+let intervalId = null;
+var UtilClass = class {
+	#manager;
+	constructor(manager) {
+		this.#manager = manager;
+	}
+	addYt(f) {
+		return this.#manager.addYt(f);
+	}
+};
+const handlers = {};
+var InterruptManager = class {
+	#lastYtAdd = null;
+	constructor() {}
+	get canAddYt() {
+		const now = Date.now();
+		return !this.#lastYtAdd || now - 4500 > this.#lastYtAdd;
+	}
+	addYt(f) {
+		if (!this.canAddYt) return null;
+		this.#lastYtAdd = Date.now();
+		return f();
+	}
+	reset() {}
+};
+async function interruptHandler(manager) {
+	manager.reset();
+	const util = new UtilClass(manager);
+	await Promise.all(Object.values(handlers).map((f) => f(util)));
+}
+function ensureIntervalOn() {
+	if (intervalId !== null) return;
+	const manager = new InterruptManager();
+	intervalId = setInterval(() => interruptHandler(manager), 1e3);
+}
+function onInterrupt(f) {
+	const interruptId = nextInterruptId++;
+	handlers[interruptId] = f;
+	ensureIntervalOn();
+	return () => {
+		delete handlers[interruptId];
+	};
+}
+//#endregion
+export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };

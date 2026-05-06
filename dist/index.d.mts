@@ -200,5 +200,19 @@ declare class IderClass<T> {
 }
 type Ider<T extends {}> = IderClass<T>;
 declare function Ider<T extends {}>(f: (t: T) => IdLiteral): Ider<T>;
+declare class UtilClass {
+  #private;
+  constructor(manager: InterruptManager);
+  addYt<T>(f: () => T): T | null;
+}
+declare class InterruptManager {
+  #private;
+  constructor();
+  get canAddYt(): boolean;
+  addYt<T>(f: () => T): T | null;
+  reset(): void;
+}
+declare function onInterrupt(f: (util: UtilClass) => Promise<void>): () => void;
+type InterruptUtil = UtilClass;
 //#endregion
-export { $, $$, $$_, E, EA, id_d_exports as Id, incremental_d_exports as Inc, M$, Nil, Nilable, NonNil, R$1 as R, RA, RE, REA, RS, RSA, RW, RWA, RWSE, RWSEA, S, SA, SSBM, SSBMChar, Stack, W, WA, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
+export { $, $$, $$_, E, EA, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, M$, Nil, Nilable, NonNil, R$1 as R, RA, RE, REA, RS, RSA, RW, RWA, RWSE, RWSEA, S, SA, SSBM, SSBMChar, Stack, W, WA, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
