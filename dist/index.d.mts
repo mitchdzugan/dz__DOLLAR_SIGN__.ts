@@ -1,4 +1,5 @@
 import { __export } from "./chunk-B9dir_RE.mjs";
+import { Draft } from "mutative";
 
 //#region src/core.d.ts
 type Nil = null | undefined;
@@ -64,6 +65,86 @@ declare const timeout: (ms: number) => Promise<unknown>;
 declare function execAndExit(p: Promise<any>): void;
 declare function withInd<T>(a: T[]): [T, number][];
 declare function firsty<T>(...args: Nilable<T>[]): T | undefined;
+//#endregion
+//#region src/rwse.d.ts
+type YieldNext<R, S> = {
+  reader: R$1;
+  state: S;
+  awaited: any;
+};
+type YieldVal<W, S, E> = {
+  cmd: "ASK";
+} | {
+  cmd: "TELL";
+  val: W;
+} | {
+  cmd: "GET";
+} | {
+  cmd: "PUT";
+  val: S;
+} | {
+  cmd: "FAIL";
+  val: E;
+};
+type CatcherResType<Err, Res> = undefined | ["f", Err] | ["r", Res];
+type CatcherType<Err, Res> = (e: any, fns: {
+  ok: (r: Res) => CatcherResType<Err, Res>;
+  err: (e: Err) => CatcherResType<Err, Res>;
+}) => CatcherResType<Err, Res>;
+type YieldValAsync<W, S, E> = YieldVal<W, S, E> | {
+  cmd: "WAIT_FOR";
+  val: Promise<any>;
+  catcher: CatcherType<E, any>;
+};
+type RWSE<R, W, S, E, Res> = Generator<YieldVal<W, S, E>, Res, YieldNext<R$1, S>>;
+type RWSEA<R, W, S, E, Res> = Generator<YieldValAsync<W, S, E>, Res, YieldNext<R$1, S>>;
+type R$1<Rt, Res> = RWSE<Rt, any, any, any, Res>;
+type W<Wt, Res> = RWSE<any, Wt, any, any, Res>;
+type S<St, Res> = RWSE<any, any, St, any, Res>;
+type E<Et, Res> = RWSE<any, any, any, Et, Res>;
+type RA<Rt, Res> = RWSEA<Rt, any, any, any, Res>;
+type WA<Wt, Res> = RWSEA<any, Wt, any, any, Res>;
+type SA<St, Res> = RWSEA<any, any, St, any, Res>;
+type EA<Et, Res> = RWSEA<any, any, any, Et, Res>;
+type RW<Rt, Wt, Res> = RWSE<Rt, Wt, any, any, Res>;
+type RS<Rt, St, Res> = RWSE<Rt, any, St, any, Res>;
+type RE<Rt, Et, Res> = RWSE<Rt, any, any, Et, Res>;
+type RWA<Rt, Wt, Res> = RWSEA<Rt, Wt, any, any, Res>;
+type RSA<Rt, St, Res> = RWSEA<Rt, any, St, any, Res>;
+type REA<Rt, Et, Res> = RWSEA<Rt, any, any, Et, Res>;
+type Either<R, E> = {
+  isOk: true;
+  res: R$1;
+  err: undefined;
+} | {
+  isOk: false;
+  err: E;
+  res: undefined;
+};
+type ExecRes<W, S, E, Res> = Either<Res, E> & {
+  state: S;
+  written: W;
+};
+declare function ask<R>(): RWSE<R$1, any, any, any, R$1>;
+declare function tell<W>(w: W): RWSE<any, W, any, any, void>;
+declare function get<S>(): RWSE<any, any, S, any, S>;
+declare function put<S>(s: S): RWSE<any, any, S, any, void>;
+declare function fail<E>(e: E): RWSE<any, any, any, E, void>;
+declare function waitFor<E, P>(promise: Promise<P>, catcher?: CatcherType<E, P>): RWSEA<any, any, any, E, P>;
+declare function asks<R, Res>(f: (r: R$1) => Res): RWSE<R$1, any, any, any, Res>;
+declare function gets<S, Res>(f: (s: S) => Res): RWSE<any, any, S, any, Res>;
+declare function mutate<S>(f: (d: Draft<S>) => void): RWSE<any, any, S, any, boolean>;
+type Stack<R, W, S> = {
+  reader: R$1;
+  initialState: S;
+  joinWriters(...ws: W[]): W;
+  exec<E, Res>(m: () => RWSE<R$1, W, S, E, Res>): ExecRes<W, S, E, Res>;
+  execAsync<E, Res>(m: () => RWSEA<R$1, W, S, E, Res>): Promise<ExecRes<W, S, E, Res>>;
+};
+declare function exec<R, W, S, E, Res>(stack: Stack<R$1, W, S>, m: () => RWSE<R$1, W, S, E, Res>): ExecRes<W, S, E, Res>;
+declare function execAsync<R, W, S, E, Res>(stack: Stack<R$1, W, S>, m: () => RWSEA<R$1, W, S, E, Res>): Promise<ExecRes<W, S, E, Res>>;
+declare function Stack<R, W, S>(reader: R$1, initialState: S, joinWriters: (...ws: W[]) => W): Stack<R$1, W, S>;
+type M$<S extends Stack<any, any, any>, E, Res> = RWSE<S["reader"], S["initialState"], ReturnType<S["joinWriters"]>, E, Res>;
 declare namespace id_d_exports {
   export { IdLiteral, of };
 }
@@ -126,4 +207,4 @@ declare class IderClass<T> {
 type Ider<T extends {}> = IderClass<T>;
 declare function Ider<T extends {}>(f: (t: T) => IdLiteral): Ider<T>;
 //#endregion
-export { $, $$, $$_, id_d_exports as Id, incremental_d_exports as Inc, Nil, Nilable, NonNil, SSBM, SSBMChar, _map, _or, _without, execAndExit, firsty, isNil, isNotNil, timeout, withInd };
+export { $, $$, $$_, E, EA, id_d_exports as Id, incremental_d_exports as Inc, M$, Nil, Nilable, NonNil, R$1 as R, RA, RE, REA, RS, RSA, RW, RWA, RWSE, RWSEA, S, SA, SSBM, SSBMChar, Stack, W, WA, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };

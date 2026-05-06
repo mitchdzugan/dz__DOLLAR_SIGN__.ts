@@ -1,5 +1,6 @@
 import { __export } from "./chunk-B9dir_RE.mjs";
 import { Character } from "@slippi/slippi-js";
+import { create } from "mutative";
 
 //#region src/id.ts
 var id_exports = {};
@@ -152,7 +153,7 @@ const SSBM = { Char: {
 	Falcon: ssbmChar(Character.CAPTAIN_FALCON, "Captain Falcon", "CAPTAIN_FALCON"),
 	DK: ssbmChar(Character.DONKEY_KONG, "Donkey Kong", "DONKEY_KONG"),
 	Fox: ssbmChar(Character.FOX, "Fox", "FOX"),
-	GameAndWatch: ssbmChar(Character.GAME_AND_WATCH, "Mr. Game & Watch", "GAME_AND_WATCH"),
+	GameAndWatch: ssbmChar(Character.GAME_AND_WATCH, "Mr. Game & Watch", "GAME_AND_WATCH", { meleeCSPFilename: "Mr. Game and Watch" }),
 	Kirby: ssbmChar(Character.KIRBY, "Kirby", "KIRBY"),
 	Bowser: ssbmChar(Character.BOWSER, "Bowser", "BOWSER"),
 	Link: ssbmChar(Character.LINK, "Link", "LINK"),
@@ -167,8 +168,8 @@ const SSBM = { Char: {
 	Puff: ssbmChar(Character.JIGGLYPUFF, "Jigglypuff", "JIGGLYPUFF"),
 	Samus: ssbmChar(Character.SAMUS, "Samus", "SAMUS"),
 	Yoshi: ssbmChar(Character.YOSHI, "Yoshi", "YOSHI"),
-	Zelda: ssbmChar(Character.ZELDA, "Zelda", "ZELDA"),
-	Sheik: ssbmChar(Character.SHEIK, "Sheik", "SHEIK"),
+	Zelda: ssbmChar(Character.ZELDA, "Zelda", "ZELDA", { meleeCSPDirname: "Zelda and Sheik" }),
+	Sheik: ssbmChar(Character.SHEIK, "Sheik", "SHEIK", { meleeCSPDirname: "Zelda and Sheik" }),
 	Falco: ssbmChar(Character.FALCO, "Falco", "FALCO"),
 	YLink: ssbmChar(Character.YOUNG_LINK, "Young Link", "YOUNG_LINK"),
 	Doc: ssbmChar(Character.DR_MARIO, "Dr. Mario", "DR_MARIO"),
@@ -212,6 +213,151 @@ function withInd(a) {
 function firsty(...args) {
 	for (const arg of args) if (isNotNil(arg)) return arg;
 	return void 0;
+}
+
+//#endregion
+//#region src/rwse.ts
+function* ask() {
+	const { reader } = yield { cmd: "ASK" };
+	return reader;
+}
+function* tell(w) {
+	yield {
+		cmd: "TELL",
+		val: w
+	};
+}
+function* get() {
+	const { state } = yield { cmd: "GET" };
+	return state;
+}
+function* put(s) {
+	yield {
+		cmd: "PUT",
+		val: s
+	};
+}
+function* fail(e) {
+	yield {
+		cmd: "FAIL",
+		val: e
+	};
+}
+function* waitFor(promise, catcher = () => void 0) {
+	const { awaited } = yield {
+		cmd: "WAIT_FOR",
+		val: promise,
+		catcher
+	};
+	return awaited;
+}
+function* asks(f) {
+	const reader = yield* ask();
+	return f(reader);
+}
+function* gets(f) {
+	const reader = yield* get();
+	return f(reader);
+}
+function* mutate(f) {
+	const curr = yield* get();
+	const next = create(curr, (d) => {
+		f(d);
+	});
+	if (curr == next) return false;
+	yield* put(next);
+	return true;
+}
+function exec(stack, m) {
+	const reader = stack.reader;
+	const writes = [];
+	let state = stack.initialState;
+	const g = m();
+	while (true) {
+		const result = g.next({
+			state,
+			reader,
+			awaited: null
+		});
+		if (result.done) return {
+			state,
+			written: stack.joinWriters(...writes),
+			isOk: true,
+			res: result.value,
+			err: void 0
+		};
+		else {
+			const y = result.value;
+			if (y.cmd === "TELL") writes.push(y.val);
+			else if (y.cmd === "PUT") state = y.val;
+			else if (y.cmd === "FAIL") return {
+				state,
+				written: stack.joinWriters(...writes),
+				isOk: false,
+				err: y.val,
+				res: void 0
+			};
+		}
+	}
+}
+async function execAsync(stack, m) {
+	const writes = [];
+	let state = stack.initialState;
+	let awaited;
+	const g = m();
+	while (true) {
+		const result = g.next({
+			state,
+			reader: stack.reader,
+			awaited
+		});
+		if (result.done) return {
+			state,
+			written: stack.joinWriters(...writes),
+			isOk: true,
+			err: void 0,
+			res: result.value
+		};
+		else {
+			const y = result.value;
+			if (y.cmd === "TELL") writes.push(y.val);
+			else if (y.cmd === "PUT") state = y.val;
+			else if (y.cmd === "FAIL") return {
+				state,
+				written: stack.joinWriters(...writes),
+				isOk: false,
+				res: void 0,
+				err: y.val
+			};
+			else if (y.cmd === "WAIT_FOR") try {
+				awaited = await y.val;
+			} catch (err) {
+				const [catchType, catchVal] = y.catcher(err, {
+					ok: (r) => ["r", r],
+					err: (e) => ["f", e]
+				}) || [];
+				if (!catchType) throw err;
+				else if (catchType === "f") return {
+					state,
+					written: stack.joinWriters(...writes),
+					isOk: false,
+					res: void 0,
+					err: catchVal
+				};
+				else awaited = catchVal;
+			}
+		}
+	}
+}
+function Stack(reader, initialState, joinWriters) {
+	const stack = {
+		reader,
+		initialState,
+		joinWriters,
+		exec: (m) => exec(stack, m),
+		execAsync: (m) => execAsync(stack, m)
+	};
+	return stack;
 }
 
 //#endregion
@@ -403,4 +549,4 @@ console.log(...NumIder.Dict([1, 5], [2, 3]).mutate(($$1) => {
 }));
 
 //#endregion
-export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, SSBM, _map, _or, _without, execAndExit, firsty, isNil, isNotNil, timeout, withInd };
+export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };

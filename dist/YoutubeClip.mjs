@@ -1,8 +1,8 @@
 import { Component, createRef } from "react";
 import cn from "classnames";
-import "re-resizable";
+import { Resizable } from "re-resizable";
 import YouTubePlayerImport from "youtube-player";
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 
 //#region src/interrupt.ts
 let nextInterruptId = 1;
@@ -121,27 +121,105 @@ var YoutubeClipImpl = class extends Component {
 		this.off();
 	}
 	render() {
-		return /* @__PURE__ */ jsx("div", {
-			className: "h-full aspect-[73/60] relative",
-			children: /* @__PURE__ */ jsxs("div", {
-				className: cn("absolute top-0 left-0 w-[100%] h-[100%]", "flex flex-col items-stretch"),
+		return /* @__PURE__ */ jsxs("div", {
+			"data-dz-component": "youtube-clip",
+			style: {
+				height: "100%",
+				aspectRatio: "73/60",
+				position: "relative"
+			},
+			children: [/* @__PURE__ */ jsx("style", { children: `
+[data-dz-component="youtube-clip"] [data-dz-class="maximize-children"] > * {
+  height: 100%;
+  width: 100%;
+}
+          ` }), /* @__PURE__ */ jsxs("div", {
+				style: {
+					position: "absolute",
+					top: 0,
+					left: 0,
+					width: "100%",
+					height: "100%",
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "stretch"
+				},
 				children: [/* @__PURE__ */ jsx("div", {
-					className: cn("absolute z-1 bg-black top-0 left-0 w-full h-full", "*:h-full *:w-full"),
+					"data-dz-class": "maximize-children",
+					style: {
+						background: "black",
+						position: "absolute",
+						zIndex: 1,
+						top: 0,
+						left: 0,
+						width: "100%",
+						height: "100%"
+					},
 					children: /* @__PURE__ */ jsx("div", { ref: this.ref })
 				}), /* @__PURE__ */ jsx("div", {
-					className: cn("transition duration-300 transition-opacity", "absolute z-2 bg-black top-0 left-0 w-full h-full", "flex items-center justify-center", this.state.isOn ? "opacity-0" : "opacity-100"),
-					children: /* @__PURE__ */ jsx("div", {
-						className: "animate-jump animate-infinite",
-						children: /* @__PURE__ */ jsx("div", { className: "skeleton h-8 w-8 rounded-full" })
-					})
+					style: {
+						transition: "opacity 300 ease-in-out",
+						opacity: this.state.isOn ? 0 : 100,
+						position: "absolute",
+						top: 0,
+						left: 0,
+						width: "100%",
+						height: "100%",
+						zIndex: 2,
+						background: "black",
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center"
+					},
+					children: this.props.loadingIndicator || null
 				})]
-			})
+			})]
 		});
 	}
 };
 function Clip(props) {
 	return /* @__PURE__ */ jsx(YoutubeClipImpl, { ...props }, `YTC:${props.ytId}`);
 }
+function ResizableClip(props) {
+	const { children, clipCn,...youtubeProps } = props;
+	return /* @__PURE__ */ jsxs("div", {
+		style: {
+			flex: 1,
+			display: "flex",
+			minHeight: 0,
+			flexDirection: "column",
+			alignItems: "stretch",
+			position: "relative"
+		},
+		children: [/* @__PURE__ */ jsx(Resizable, {
+			enable: {
+				top: false,
+				right: false,
+				bottom: true,
+				left: false,
+				topRight: false,
+				bottomRight: false,
+				bottomLeft: false,
+				topLeft: false
+			},
+			defaultSize: { height: 0 },
+			style: {
+				display: "flex",
+				flexDirection: "row",
+				justifyContent: "center"
+			},
+			className: clipCn || "",
+			handleComponent: { bottom: /* @__PURE__ */ jsx(Fragment, { children: props.handle || /* @__PURE__ */ jsx("span", { children: "☶" }) }) },
+			children: /* @__PURE__ */ jsx("div", {
+				className: cn("relative flex-1 flex items-center justify-center mb-[2rem]", "mb-[calc(5px+0.5rem)]"),
+				children: /* @__PURE__ */ jsx(Clip, { ...youtubeProps })
+			})
+		}), /* @__PURE__ */ jsx("div", {
+			className: "relative min-h-0 flex-1 mt-2",
+			children: children || null
+		})]
+	});
+}
 
 //#endregion
-export { Clip };
+export { Clip, ResizableClip };

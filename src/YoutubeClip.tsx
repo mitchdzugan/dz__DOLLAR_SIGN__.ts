@@ -12,6 +12,7 @@ export type YoutubeClipProps = {
   ytId: string;
   cnExtra?: string | undefined;
   hideOffscreen?: boolean | undefined;
+  loadingIndicator?: ReactNode | undefined;
 };
 
 const mkYtPlayer: (...a: any[]) => YouTubePlayer = YouTubePlayerImport as any;
@@ -117,32 +118,61 @@ class YoutubeClipImpl extends Component<YoutubeClipProps> {
 
   render() {
     return (
-      <div className="h-full aspect-[73/60] relative">
+      <div
+        data-dz-component="youtube-clip"
+        style={{ height: "100%", aspectRatio: "73/60", position: "relative" }}
+      >
+        <style>
+          {`
+[data-dz-component="youtube-clip"] [data-dz-class="maximize-children"] > * {
+  height: 100%;
+  width: 100%;
+}
+          `}
+        </style>
         <div
-          className={cn(
-            "absolute top-0 left-0 w-[100%] h-[100%]",
-            "flex flex-col items-stretch",
-          )}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+          }}
         >
           <div
-            className={cn(
-              "absolute z-1 bg-black top-0 left-0 w-full h-full",
-              "*:h-full *:w-full",
-            )}
+            data-dz-class="maximize-children"
+            style={{
+              background: "black",
+              position: "absolute",
+              zIndex: 1,
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+            }}
           >
             <div ref={this.ref} />
           </div>
           <div
-            className={cn(
-              "transition duration-300 transition-opacity",
-              "absolute z-2 bg-black top-0 left-0 w-full h-full",
-              "flex items-center justify-center",
-              this.state.isOn ? "opacity-0" : "opacity-100",
-            )}
+            style={{
+              transition: "opacity 300 ease-in-out",
+              opacity: this.state.isOn ? 0 : 100,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 2,
+              background: "black",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
           >
-            <div className="animate-jump animate-infinite">
-              <div className="skeleton h-8 w-8 rounded-full" />
-            </div>
+            {this.props.loadingIndicator || null}
           </div>
         </div>
       </div>
@@ -154,14 +184,24 @@ export function Clip(props: YoutubeClipProps) {
   return <YoutubeClipImpl key={`YTC:${props.ytId}`} {...props} />;
 }
 
-type ResizableClipProps = YoutubeClipProps & {
+export type ResizableClipProps = YoutubeClipProps & {
   clipCn?: string | null | undefined;
   children?: undefined | null | ReactNode | ReactNode[];
+  handle?: undefined | null | ReactNode | ReactNode[];
 };
-function ResizableClip(props: ResizableClipProps) {
+export function ResizableClip(props: ResizableClipProps) {
   const { children, clipCn, ...youtubeProps } = props;
   return (
-    <div className="flex-1 min-h-0 flex flex-col items-stretch relative">
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        minHeight: 0,
+        flexDirection: "column",
+        alignItems: "stretch",
+        position: "relative",
+      }}
+    >
       <Resizable
         enable={{
           top: false,
@@ -174,23 +214,14 @@ function ResizableClip(props: ResizableClipProps) {
           topLeft: false,
         }}
         defaultSize={{ height: 0 }}
-        className={cn(
-          "min-h-56 h-56 sm:h-72 sm:min-h-72 flex flex-row",
-          "justify-center bg-gray-800",
-          clipCn || "",
-        )}
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "center",
+        }}
+        className={clipCn || ""}
         handleComponent={{
-          bottom: (
-            <div
-              className={cn(
-                "bg-base-300 border border-1 border-base-100 rounded-sm",
-                "h-5 w-full p-0 flex flex-row items-center justify-center",
-                "absolute -top-2 left-0 text-neutral",
-              )}
-            >
-              ☶
-            </div>
-          ),
+          bottom: <>{props.handle || <span>☶</span>}</>,
         }}
       >
         <div
