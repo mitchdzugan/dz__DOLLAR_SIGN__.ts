@@ -1,5 +1,4 @@
 import { Character } from "@slippi/slippi-js";
-import * as Id from "./id.js";
 
 export type Nil = null | undefined;
 export type NonNil = Exclude<any, Nil>;

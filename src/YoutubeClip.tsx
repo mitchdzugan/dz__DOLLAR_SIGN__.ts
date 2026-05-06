@@ -1,5 +1,4 @@
 import { Component, createRef, type ReactNode } from "react";
-import cn from "classnames";
 import { Resizable } from "re-resizable";
 import type { YouTubePlayer } from "youtube-player/dist/types.js";
 import YouTubePlayerImport from "youtube-player";
@@ -10,7 +9,6 @@ export type YoutubeClipProps = {
   length: number;
   id: string;
   ytId: string;
-  cnExtra?: string | undefined;
   hideOffscreen?: boolean | undefined;
   loadingIndicator?: ReactNode | undefined;
 };
@@ -186,8 +184,10 @@ export function Clip(props: YoutubeClipProps) {
 
 export type ResizableClipProps = YoutubeClipProps & {
   clipCn?: string | null | undefined;
+  childrenCn?: string | null | undefined;
   children?: undefined | null | ReactNode | ReactNode[];
   handle?: undefined | null | ReactNode | ReactNode[];
+  defaultHeight?: number | string | undefined;
 };
 export function ResizableClip(props: ResizableClipProps) {
   const { children, clipCn, ...youtubeProps } = props;
@@ -213,7 +213,7 @@ export function ResizableClip(props: ResizableClipProps) {
           bottomLeft: false,
           topLeft: false,
         }}
-        defaultSize={{ height: 0 }}
+        defaultSize={{ height: props.defaultHeight || 0 }}
         style={{
           display: "flex",
           flexDirection: "row",
@@ -225,15 +225,23 @@ export function ResizableClip(props: ResizableClipProps) {
         }}
       >
         <div
-          className={cn(
-            "relative flex-1 flex items-center justify-center mb-[2rem]",
-            "mb-[calc(5px+0.5rem)]",
-          )}
+          style={{
+            position: "relative",
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
           <Clip {...youtubeProps} />
         </div>
       </Resizable>
-      <div className="relative min-h-0 flex-1 mt-2">{children || null}</div>
+      <div
+        style={{ position: "relative", minHeight: 0, flex: 1 }}
+        className={props.childrenCn || ""}
+      >
+        {children || null}
+      </div>
     </div>
   );
 }

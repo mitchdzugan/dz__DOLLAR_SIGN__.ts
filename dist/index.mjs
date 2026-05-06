@@ -1,109 +1,6 @@
 import { t as __exportAll } from "./chunk.mjs";
 import { Character } from "@slippi/slippi-js";
 import { create } from "mutative";
-//#region src/id.ts
-var id_exports = /* @__PURE__ */ __exportAll({ of: () => of });
-function b6Char(n) {
-	return [
-		"0",
-		"1",
-		"2",
-		"3",
-		"4",
-		"5",
-		"6",
-		"7",
-		"8",
-		"9",
-		"a",
-		"b",
-		"c",
-		"d",
-		"e",
-		"f",
-		"g",
-		"h",
-		"i",
-		"j",
-		"k",
-		"l",
-		"m",
-		"n",
-		"o",
-		"p",
-		"q",
-		"r",
-		"s",
-		"t",
-		"u",
-		"v",
-		"w",
-		"x",
-		"y",
-		"z",
-		"A",
-		"B",
-		"C",
-		"D",
-		"E",
-		"F",
-		"G",
-		"H",
-		"I",
-		"J",
-		"K",
-		"L",
-		"M",
-		"N",
-		"O",
-		"P",
-		"Q",
-		"R",
-		"S",
-		"T",
-		"U",
-		"V",
-		"W",
-		"X",
-		"Y",
-		"Z",
-		"-"
-	][n] || "_";
-}
-function b8sToB6s(...b8s) {
-	const res = [];
-	const incoming = [...b8s];
-	incoming.reverse();
-	for (let i = 0; i < incoming.length; i++) {
-		const b0 = Math.pow(256, 0) * (incoming[i + 0] || 0);
-		const b1 = Math.pow(256, 1) * (incoming[i + 1] || 0);
-		const b2 = Math.pow(256, 2) * (incoming[i + 2] || 0);
-		let v = b0 + b1 + b2;
-		for (let j = 0; j < 4; j++) {
-			res.push(v % 64);
-			v = Math.floor(v / 64);
-		}
-	}
-	res.reverse();
-	let start = 0;
-	while (start < 4 && !res[start]) start++;
-	return res.slice(start);
-}
-function strIdStr(s) {
-	return b8sToB6s(...new TextEncoder().encode(s)).map((n) => b6Char(n)).join("");
-}
-const OF_LITERALS = /* @__PURE__ */ new Map();
-OF_LITERALS.set(void 0, "U");
-OF_LITERALS.set(null, "0");
-OF_LITERALS.set(true, "t");
-OF_LITERALS.set(false, "f");
-function of(v) {
-	const litVal = OF_LITERALS.get(v);
-	if (litVal) return litVal;
-	else if (typeof v === "number") return `N${strIdStr(`${v}`)}`;
-	else return `S${strIdStr(v)}`;
-}
-//#endregion
 //#region src/core.ts
 function $(k) {
 	return (t) => t[k];
@@ -349,6 +246,109 @@ function Stack(reader, initialState, joinWriters) {
 		execAsync: (m) => execAsync(stack, m)
 	};
 	return stack;
+}
+//#endregion
+//#region src/id.ts
+var id_exports = /* @__PURE__ */ __exportAll({ of: () => of });
+function b6Char(n) {
+	return [
+		"0",
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"9",
+		"a",
+		"b",
+		"c",
+		"d",
+		"e",
+		"f",
+		"g",
+		"h",
+		"i",
+		"j",
+		"k",
+		"l",
+		"m",
+		"n",
+		"o",
+		"p",
+		"q",
+		"r",
+		"s",
+		"t",
+		"u",
+		"v",
+		"w",
+		"x",
+		"y",
+		"z",
+		"A",
+		"B",
+		"C",
+		"D",
+		"E",
+		"F",
+		"G",
+		"H",
+		"I",
+		"J",
+		"K",
+		"L",
+		"M",
+		"N",
+		"O",
+		"P",
+		"Q",
+		"R",
+		"S",
+		"T",
+		"U",
+		"V",
+		"W",
+		"X",
+		"Y",
+		"Z",
+		"-"
+	][n] || "_";
+}
+function b8sToB6s(...b8s) {
+	const res = [];
+	const incoming = [...b8s];
+	incoming.reverse();
+	for (let i = 0; i < incoming.length; i++) {
+		const b0 = Math.pow(256, 0) * (incoming[i + 0] || 0);
+		const b1 = Math.pow(256, 1) * (incoming[i + 1] || 0);
+		const b2 = Math.pow(256, 2) * (incoming[i + 2] || 0);
+		let v = b0 + b1 + b2;
+		for (let j = 0; j < 4; j++) {
+			res.push(v % 64);
+			v = Math.floor(v / 64);
+		}
+	}
+	res.reverse();
+	let start = 0;
+	while (start < 4 && !res[start]) start++;
+	return res.slice(start);
+}
+function strIdStr(s) {
+	return b8sToB6s(...new TextEncoder().encode(s)).map((n) => b6Char(n)).join("");
+}
+const OF_LITERALS = /* @__PURE__ */ new Map();
+OF_LITERALS.set(void 0, "U");
+OF_LITERALS.set(null, "0");
+OF_LITERALS.set(true, "t");
+OF_LITERALS.set(false, "f");
+function of(v) {
+	const litVal = OF_LITERALS.get(v);
+	if (litVal) return litVal;
+	else if (typeof v === "number") return `N${strIdStr(`${v}`)}`;
+	else return `S${strIdStr(v)}`;
 }
 //#endregion
 //#region src/incremental.ts

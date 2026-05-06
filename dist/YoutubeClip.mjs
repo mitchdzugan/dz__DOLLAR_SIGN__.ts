@@ -1,5 +1,4 @@
 import { Component, createRef } from "react";
-import cn from "classnames";
 import { Resizable } from "re-resizable";
 import YouTubePlayerImport from "youtube-player";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
@@ -198,7 +197,7 @@ function ResizableClip(props) {
 				bottomLeft: false,
 				topLeft: false
 			},
-			defaultSize: { height: 0 },
+			defaultSize: { height: props.defaultHeight || 0 },
 			style: {
 				display: "flex",
 				flexDirection: "row",
@@ -207,11 +206,22 @@ function ResizableClip(props) {
 			className: clipCn || "",
 			handleComponent: { bottom: /* @__PURE__ */ jsx(Fragment, { children: props.handle || /* @__PURE__ */ jsx("span", { children: "☶" }) }) },
 			children: /* @__PURE__ */ jsx("div", {
-				className: cn("relative flex-1 flex items-center justify-center mb-[2rem]", "mb-[calc(5px+0.5rem)]"),
+				style: {
+					position: "relative",
+					flex: 1,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center"
+				},
 				children: /* @__PURE__ */ jsx(Clip, { ...youtubeProps })
 			})
 		}), /* @__PURE__ */ jsx("div", {
-			className: "relative min-h-0 flex-1 mt-2",
+			style: {
+				position: "relative",
+				minHeight: 0,
+				flex: 1
+			},
+			className: props.childrenCn || "",
 			children: children || null
 		})]
 	});
