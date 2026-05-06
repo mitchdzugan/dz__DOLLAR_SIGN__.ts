@@ -1,4 +1,4 @@
-import { __export } from "./chunk-B9dir_RE.mjs";
+import { t as __exportAll } from "./chunk-CfYAbeIz.mjs";
 import { Draft } from "mutative";
 
 //#region src/core.d.ts
@@ -145,14 +145,8 @@ declare function exec<R, W, S, E, Res>(stack: Stack<R$1, W, S>, m: () => RWSE<R$
 declare function execAsync<R, W, S, E, Res>(stack: Stack<R$1, W, S>, m: () => RWSEA<R$1, W, S, E, Res>): Promise<ExecRes<W, S, E, Res>>;
 declare function Stack<R, W, S>(reader: R$1, initialState: S, joinWriters: (...ws: W[]) => W): Stack<R$1, W, S>;
 type M$<S extends Stack<any, any, any>, E, Res> = RWSE<S["reader"], S["initialState"], ReturnType<S["joinWriters"]>, E, Res>;
-declare namespace id_d_exports {
-  export { IdLiteral, of };
-}
 type IdLiteral = null | undefined | string | number | boolean;
 declare function of(v: IdLiteral): string;
-declare namespace incremental_d_exports {
-  export { Ider };
-}
 type Nilable$1<T extends {}> = T | null | undefined;
 declare class OptClass<T extends {}> {
   #private;

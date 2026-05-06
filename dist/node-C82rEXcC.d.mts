@@ -1,7 +1,7 @@
 import * as nodeFs from "node:fs/promises";
 import * as fs0 from "fs";
-import * as stream93 from "stream";
-import * as events97 from "events";
+import * as stream0 from "stream";
+import * as events0 from "events";
 
 //#region src/node.d.ts
 declare function imageToBase64DataUrl(filePath: string, mimeType: string): Promise<string>;
@@ -31,11 +31,11 @@ declare const fs: {
     encoding: "buffer";
     withFileTypes?: false | undefined;
     recursive?: boolean | undefined;
-  } | "buffer"): Promise<Buffer[]>;
+  } | "buffer"): Promise<NonSharedBuffer[]>;
   readdir(path: fs0.PathLike, options?: (fs0.ObjectEncodingOptions & {
     withFileTypes?: false | undefined;
     recursive?: boolean | undefined;
-  }) | BufferEncoding | null): Promise<string[] | Buffer[]>;
+  }) | BufferEncoding | null): Promise<string[] | NonSharedBuffer[]>;
   readdir(path: fs0.PathLike, options: fs0.ObjectEncodingOptions & {
     withFileTypes: true;
     recursive?: boolean | undefined;
@@ -44,10 +44,10 @@ declare const fs: {
     encoding: "buffer";
     withFileTypes: true;
     recursive?: boolean | undefined;
-  }): Promise<fs0.Dirent<Buffer>[]>;
+  }): Promise<fs0.Dirent<NonSharedBuffer>[]>;
   readlink(path: fs0.PathLike, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string>;
-  readlink(path: fs0.PathLike, options: fs0.BufferEncodingOption): Promise<Buffer>;
-  readlink(path: fs0.PathLike, options?: fs0.ObjectEncodingOptions | string | null): Promise<string | Buffer>;
+  readlink(path: fs0.PathLike, options: fs0.BufferEncodingOption): Promise<NonSharedBuffer>;
+  readlink(path: fs0.PathLike, options?: fs0.ObjectEncodingOptions | string | null): Promise<string | NonSharedBuffer>;
   symlink(target: fs0.PathLike, path: fs0.PathLike, type?: string | null): Promise<void>;
   lstat(path: fs0.PathLike, opts?: fs0.StatOptions & {
     bigint?: false | undefined;
@@ -79,36 +79,35 @@ declare const fs: {
   chown(path: fs0.PathLike, uid: number, gid: number): Promise<void>;
   utimes(path: fs0.PathLike, atime: fs0.TimeLike, mtime: fs0.TimeLike): Promise<void>;
   realpath(path: fs0.PathLike, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string>;
-  realpath(path: fs0.PathLike, options: fs0.BufferEncodingOption): Promise<Buffer>;
-  realpath(path: fs0.PathLike, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string | Buffer>;
+  realpath(path: fs0.PathLike, options: fs0.BufferEncodingOption): Promise<NonSharedBuffer>;
+  realpath(path: fs0.PathLike, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string | NonSharedBuffer>;
   mkdtemp(prefix: string, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string>;
-  mkdtemp(prefix: string, options: fs0.BufferEncodingOption): Promise<Buffer>;
-  mkdtemp(prefix: string, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string | Buffer>;
-  writeFile(file: fs0.PathLike | nodeFs.FileHandle, data: string | NodeJS.ArrayBufferView | Iterable<string | NodeJS.ArrayBufferView> | AsyncIterable<string | NodeJS.ArrayBufferView> | stream93, options?: (fs0.ObjectEncodingOptions & {
+  mkdtemp(prefix: string, options: fs0.BufferEncodingOption): Promise<NonSharedBuffer>;
+  mkdtemp(prefix: string, options?: fs0.ObjectEncodingOptions | BufferEncoding | null): Promise<string | NonSharedBuffer>;
+  mkdtempDisposable(prefix: fs0.PathLike, options?: fs0.EncodingOption): Promise<nodeFs.DisposableTempDir>;
+  writeFile(file: fs0.PathLike | nodeFs.FileHandle, data: string | NodeJS.ArrayBufferView | Iterable<string | NodeJS.ArrayBufferView> | AsyncIterable<string | NodeJS.ArrayBufferView> | stream0, options?: (fs0.ObjectEncodingOptions & {
     mode?: fs0.Mode | undefined;
     flag?: fs0.OpenMode | undefined;
     flush?: boolean | undefined;
-  } & events97.Abortable) | BufferEncoding | null): Promise<void>;
+  } & events0.Abortable) | BufferEncoding | null): Promise<void>;
   appendFile(path: fs0.PathLike | nodeFs.FileHandle, data: string | Uint8Array, options?: (fs0.ObjectEncodingOptions & nodeFs.FlagAndOpenMode & {
     flush?: boolean | undefined;
   }) | BufferEncoding | null): Promise<void>;
   readFile(path: fs0.PathLike | nodeFs.FileHandle, options?: ({
     encoding?: null | undefined;
     flag?: fs0.OpenMode | undefined;
-  } & events97.Abortable) | null): Promise<Buffer>;
+  } & events0.Abortable) | null): Promise<NonSharedBuffer>;
   readFile(path: fs0.PathLike | nodeFs.FileHandle, options: ({
     encoding: BufferEncoding;
     flag?: fs0.OpenMode | undefined;
-  } & events97.Abortable) | BufferEncoding): Promise<string>;
-  readFile(path: fs0.PathLike | nodeFs.FileHandle, options?: (fs0.ObjectEncodingOptions & events97.Abortable & {
+  } & events0.Abortable) | BufferEncoding): Promise<string>;
+  readFile(path: fs0.PathLike | nodeFs.FileHandle, options?: (fs0.ObjectEncodingOptions & events0.Abortable & {
     flag?: fs0.OpenMode | undefined;
-  }) | BufferEncoding | null): Promise<string | Buffer>;
+  }) | BufferEncoding | null): Promise<string | NonSharedBuffer>;
   opendir(path: fs0.PathLike, options?: fs0.OpenDirOptions): Promise<fs0.Dir>;
-  watch(filename: fs0.PathLike, options: (fs0.WatchOptions & {
-    encoding: "buffer";
-  }) | "buffer"): AsyncIterable<nodeFs.FileChangeInfo<Buffer>>;
-  watch(filename: fs0.PathLike, options?: fs0.WatchOptions | BufferEncoding): AsyncIterable<nodeFs.FileChangeInfo<string>>;
-  watch(filename: fs0.PathLike, options: fs0.WatchOptions | string): AsyncIterable<nodeFs.FileChangeInfo<string>> | AsyncIterable<nodeFs.FileChangeInfo<Buffer>>;
+  watch(filename: fs0.PathLike, options?: nodeFs.WatchOptionsWithStringEncoding | BufferEncoding): NodeJS.AsyncIterator<nodeFs.FileChangeInfo<string>>;
+  watch(filename: fs0.PathLike, options: nodeFs.WatchOptionsWithBufferEncoding | "buffer"): NodeJS.AsyncIterator<nodeFs.FileChangeInfo<NonSharedBuffer>>;
+  watch(filename: fs0.PathLike, options: nodeFs.WatchOptions | BufferEncoding | "buffer"): NodeJS.AsyncIterator<nodeFs.FileChangeInfo<string | NonSharedBuffer>>;
   cp(source: string | URL, destination: string | URL, opts?: fs0.CopyOptions): Promise<void>;
   glob(pattern: string | readonly string[]): NodeJS.AsyncIterator<string>;
   glob(pattern: string | readonly string[], options: fs0.GlobOptionsWithFileTypes): NodeJS.AsyncIterator<fs0.Dirent>;

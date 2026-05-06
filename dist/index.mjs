@@ -1,12 +1,10 @@
-import { __export } from "./chunk-B9dir_RE.mjs";
+import { t as __exportAll } from "./chunk-CfYAbeIz.mjs";
 import { Character } from "@slippi/slippi-js";
 import { create } from "mutative";
-
 //#region src/id.ts
-var id_exports = {};
-__export(id_exports, { of: () => of });
+var id_exports = /* @__PURE__ */ __exportAll({ of: () => of });
 function b6Char(n) {
-	const mLookup = [
+	return [
 		"0",
 		"1",
 		"2",
@@ -70,8 +68,7 @@ function b6Char(n) {
 		"Y",
 		"Z",
 		"-"
-	];
-	return mLookup[n] || "_";
+	][n] || "_";
 }
 function b8sToB6s(...b8s) {
 	const res = [];
@@ -93,8 +90,7 @@ function b8sToB6s(...b8s) {
 	return res.slice(start);
 }
 function strIdStr(s) {
-	const encoder = new TextEncoder();
-	return b8sToB6s(...encoder.encode(s)).map((n) => b6Char(n)).join("");
+	return b8sToB6s(...new TextEncoder().encode(s)).map((n) => b6Char(n)).join("");
 }
 const OF_LITERALS = /* @__PURE__ */ new Map();
 OF_LITERALS.set(void 0, "U");
@@ -107,7 +103,6 @@ function of(v) {
 	else if (typeof v === "number") return `N${strIdStr(`${v}`)}`;
 	else return `S${strIdStr(v)}`;
 }
-
 //#endregion
 //#region src/core.ts
 function $(k) {
@@ -212,9 +207,7 @@ function withInd(a) {
 }
 function firsty(...args) {
 	for (const arg of args) if (isNotNil(arg)) return arg;
-	return void 0;
 }
-
 //#endregion
 //#region src/rwse.ts
 function* ask() {
@@ -252,12 +245,10 @@ function* waitFor(promise, catcher = () => void 0) {
 	return awaited;
 }
 function* asks(f) {
-	const reader = yield* ask();
-	return f(reader);
+	return f(yield* ask());
 }
 function* gets(f) {
-	const reader = yield* get();
-	return f(reader);
+	return f(yield* get());
 }
 function* mutate(f) {
 	const curr = yield* get();
@@ -359,15 +350,12 @@ function Stack(reader, initialState, joinWriters) {
 	};
 	return stack;
 }
-
 //#endregion
 //#region src/incremental.ts
-var incremental_exports = {};
-__export(incremental_exports, { Ider: () => Ider });
+var incremental_exports = /* @__PURE__ */ __exportAll({ Ider: () => Ider });
 function idKey(id) {
 	const valueString = id ? `${id}` : "";
-	const typeString = `${typeof id}`;
-	return `${typeString}|${valueString}`;
+	return `${`${typeof id}`}|${valueString}`;
 }
 const optCase = (onSome, onNone) => (nilable) => {
 	if (nilable !== void 0 && nilable !== null) return onSome(nilable);
@@ -459,21 +447,18 @@ var MutatedDict = class MutatedDict extends BaseDict_r {
 		this.addMutation(k, ["set", v]);
 	}
 	[Symbol.iterator]() {
-		const self = this;
-		const cachedIterated = self.#iterated;
-		if (cachedIterated) return function* () {
+		const cachedIterated = this.#iterated;
+		if (cachedIterated) return (function* () {
 			for (const next of cachedIterated) yield next;
-		}();
+		})();
 		const base = this.#base;
 		const mutations = this.#mutations;
 		const setIterated = (iterated) => this.#iterated = iterated;
-		return function* () {
+		return (function* () {
 			const iterated = [];
 			for (const next of base) {
 				const [k] = next;
-				const key = base.key(k);
-				const mutation = mutations[key];
-				if (!mutation) {
+				if (!mutations[base.key(k)]) {
 					iterated.push(next);
 					yield next;
 				}
@@ -485,10 +470,10 @@ var MutatedDict = class MutatedDict extends BaseDict_r {
 				yield next;
 			}
 			setIterated(iterated);
-		}();
+		})();
 	}
 	lookup(k) {
-		const id = this.key(k);
+		this.key(k);
 		return Opt(void 0);
 	}
 	mutate(mutater) {
@@ -508,12 +493,12 @@ var PureDict_r = class extends BaseDict_r {
 	}
 	[Symbol.iterator]() {
 		const self = this;
-		return function* () {
+		return (function* () {
 			for (const k in self.#data) {
 				const val = self.#data[k];
 				if (val) yield val;
 			}
-		}();
+		})();
 	}
 	lookup(k) {
 		const id = this.key(k);
@@ -543,10 +528,9 @@ function Ider(f) {
 }
 const NumIder = Ider((i) => i);
 console.log("intDict!!!");
-console.log(...NumIder.Dict([1, 5], [2, 3]).mutate(($$1) => {
-	$$1.set(1, 2);
-	$$1.delete(2);
+console.log(...NumIder.Dict([1, 5], [2, 3]).mutate(($) => {
+	$.set(1, 2);
+	$.delete(2);
 }));
-
 //#endregion
 export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };

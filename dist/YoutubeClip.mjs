@@ -3,7 +3,6 @@ import cn from "classnames";
 import { Resizable } from "re-resizable";
 import YouTubePlayerImport from "youtube-player";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-
 //#region src/interrupt.ts
 let nextInterruptId = 1;
 let intervalId = null;
@@ -49,7 +48,6 @@ function onInterrupt(f) {
 		delete handlers[interruptId];
 	};
 }
-
 //#endregion
 //#region src/YoutubeClip.tsx
 const mkYtPlayer = YouTubePlayerImport;
@@ -75,8 +73,7 @@ var YoutubeClipImpl = class extends Component {
 		if (player) return player;
 		const ytEl = this.ref?.current;
 		if (!ytEl) return null;
-		const startFrame = (this.#mruProps || this.props).start;
-		const start = startFrame / 60;
+		const start = (this.#mruProps || this.props).start / 60;
 		this.#player = util.addYt(() => mkYtPlayer(ytEl, {
 			videoId: this.#mruProps.ytId,
 			playerVars: {
@@ -107,8 +104,7 @@ var YoutubeClipImpl = class extends Component {
 		const interruptOff = onInterrupt((util) => this.onTimeUpdate(util));
 		this.#offFn = () => {
 			interruptOff();
-			const player = this.#player || { async destroy() {} };
-			player.destroy().then(() => console.log("video off"));
+			(this.#player || { async destroy() {} }).destroy().then(() => console.log("video off"));
 		};
 	}
 	componentDidMount() {
@@ -181,7 +177,7 @@ function Clip(props) {
 	return /* @__PURE__ */ jsx(YoutubeClipImpl, { ...props }, `YTC:${props.ytId}`);
 }
 function ResizableClip(props) {
-	const { children, clipCn,...youtubeProps } = props;
+	const { children, clipCn, ...youtubeProps } = props;
 	return /* @__PURE__ */ jsxs("div", {
 		style: {
 			flex: 1,
@@ -220,6 +216,5 @@ function ResizableClip(props) {
 		})]
 	});
 }
-
 //#endregion
 export { Clip, ResizableClip };
