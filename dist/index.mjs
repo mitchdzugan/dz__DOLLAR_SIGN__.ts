@@ -1,7 +1,8 @@
 import { t as __exportAll } from "./chunk.mjs";
-import { Character } from "@slippi/slippi-js";
+import * as SLIPPI_JS_IMP from "@slippi/slippi-js";
 import { create } from "mutative";
 //#region src/core.ts
+const { Character } = SLIPPI_JS_IMP.default || SLIPPI_JS_IMP;
 function $(k) {
 	return (t) => t[k];
 }

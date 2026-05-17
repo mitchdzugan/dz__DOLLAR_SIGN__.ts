@@ -1,4 +1,6 @@
-import { Character } from "@slippi/slippi-js";
+import * as SLIPPI_JS_IMP from "@slippi/slippi-js";
+const SLIPPI_JS_C_IMP: { default: typeof SLIPPI_JS_IMP } = SLIPPI_JS_IMP as any;
+const { Character } = SLIPPI_JS_C_IMP.default || SLIPPI_JS_IMP;
 
 export type Nil = null | undefined;
 export type NonNil = Exclude<any, Nil>;
