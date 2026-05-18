@@ -106,37 +106,49 @@ function withInd(a) {
 function firsty(...args) {
 	for (const arg of args) if (isNotNil(arg)) return arg;
 }
+function Ok(r) {
+	return {
+		isOk: true,
+		res: r,
+		err: void 0
+	};
+}
+function Err(e) {
+	return {
+		isOk: false,
+		res: void 0,
+		err: e
+	};
+}
 //#endregion
 //#region src/rwse.ts
 function* ask() {
-	const { reader } = yield { cmd: "ASK" };
-	return reader;
-}
-function* tell(w) {
-	yield {
-		cmd: "TELL",
-		val: w
-	};
+	return (yield { cmd: "ASK" }).reader;
 }
 function* get() {
-	const { state } = yield { cmd: "GET" };
-	return state;
+	return (yield { cmd: "GET" }).state;
 }
-function* put(s) {
+function* tell(val) {
 	yield {
-		cmd: "PUT",
-		val: s
+		cmd: "TELL",
+		val
 	};
 }
-function* fail(e) {
+function* put(val) {
+	yield {
+		cmd: "PUT",
+		val
+	};
+}
+function* fail(val) {
 	yield {
 		cmd: "FAIL",
-		val: e
+		val
 	};
 }
 function* waitFor(promise, catcher = () => void 0) {
 	const { awaited } = yield {
-		cmd: "WAIT_FOR",
+		cmd: "AWAIT",
 		val: promise,
 		catcher
 	};
@@ -157,96 +169,345 @@ function* mutate(f) {
 	yield* put(next);
 	return true;
 }
-function exec(stack, m) {
-	const reader = stack.reader;
-	const writes = [];
-	let state = stack.initialState;
-	const g = m();
+const STACK = new class StackConfigClass {
+	initialState;
+	joinWriters;
+	reader;
+	constructor(initialState, joinWriters, reader) {
+		this.initialState = initialState;
+		this.joinWriters = joinWriters;
+		this.reader = reader;
+	}
+	_r(r) {
+		return new StackConfigClass(this.initialState, this.joinWriters, r);
+	}
+	_w(joinWriters) {
+		return new StackConfigClass(this.initialState, joinWriters, this.reader);
+	}
+	_s(initialState) {
+		return new StackConfigClass(initialState, this.joinWriters, this.reader);
+	}
+	exec(m) {
+		return exec(m, this);
+	}
+	execAsync(m) {
+		return execAsync(m, this);
+	}
+}(void 0, void 0, void 0);
+const r = (r) => STACK._r(r);
+const rw = (r, w) => STACK._r(r)._w(w);
+const rs = (r, s) => STACK._r(r)._s(s);
+const rws = (r, w, s) => STACK._r(r)._w(w)._s(s);
+const w = (w) => STACK._w(w);
+const ws = (w, s) => STACK._w(w)._s(s);
+const s = (s) => STACK._s(s);
+function* reading(reader, m) {
+	let awaited;
+	const g = m;
 	while (true) {
+		const state = yield* get();
 		const result = g.next({
 			state,
 			reader,
-			awaited: null
+			awaited
 		});
-		if (result.done) return {
-			state,
-			written: stack.joinWriters(...writes),
-			isOk: true,
-			res: result.value,
-			err: void 0
-		};
-		else {
-			const y = result.value;
-			if (y.cmd === "TELL") writes.push(y.val);
-			else if (y.cmd === "PUT") state = y.val;
-			else if (y.cmd === "FAIL") return {
-				state,
-				written: stack.joinWriters(...writes),
-				isOk: false,
-				err: y.val,
-				res: void 0
-			};
-		}
+		if (result.done) return result.value;
+		else awaited = yield result.value;
 	}
 }
-async function execAsync(stack, m) {
+function* catching(catcher, m) {
+	let awaited;
+	const g = m;
+	const reader = yield* ask();
+	while (true) {
+		const state = yield* get();
+		const result = g.next({
+			state,
+			reader,
+			awaited
+		});
+		if (result.done) return result.value;
+		else if (result.value.cmd === "FAIL") {
+			const caught = catcher(result.value.val);
+			if (caught.isOk) return caught.res;
+			else yield {
+				cmd: "FAIL",
+				val: caught.err
+			};
+		} else awaited = yield result.value;
+	}
+}
+function exec(m, stackCfg) {
+	let res = void 0;
+	execRaw(m, stackCfg, (finalRes) => res = finalRes);
+	if (!res) throw "non-terminated rwse monad";
+	return res;
+}
+async function execRaw(m, stackCfg, onDone) {
+	const stack = stackCfg;
+	function joinWrites(ws) {
+		if (stack.joinWriters) return stack.joinWriters(...ws);
+	}
 	const writes = [];
 	let state = stack.initialState;
 	let awaited;
-	const g = m();
+	const g = m;
 	while (true) {
 		const result = g.next({
 			state,
 			reader: stack.reader,
 			awaited
 		});
-		if (result.done) return {
+		if (result.done) return onDone({
 			state,
-			written: stack.joinWriters(...writes),
+			written: joinWrites(writes),
 			isOk: true,
-			err: void 0,
-			res: result.value
-		};
+			res: result.value,
+			err: void 0
+		});
 		else {
 			const y = result.value;
 			if (y.cmd === "TELL") writes.push(y.val);
 			else if (y.cmd === "PUT") state = y.val;
-			else if (y.cmd === "FAIL") return {
+			else if (y.cmd === "FAIL") return onDone({
 				state,
-				written: stack.joinWriters(...writes),
+				written: joinWrites(writes),
 				isOk: false,
-				res: void 0,
-				err: y.val
-			};
-			else if (y.cmd === "WAIT_FOR") try {
+				err: y.val,
+				res: void 0
+			});
+			else if (y.cmd === "AWAIT") try {
 				awaited = await y.val;
 			} catch (err) {
-				const [catchType, catchVal] = y.catcher(err, {
-					ok: (r) => ["r", r],
-					err: (e) => ["f", e]
-				}) || [];
-				if (!catchType) throw err;
-				else if (catchType === "f") return {
+				if (!y.catcher) throw err;
+				const caughtVal = y.catcher(err);
+				if (!caughtVal) throw err;
+				else if (!caughtVal.isOk) return onDone({
 					state,
-					written: stack.joinWriters(...writes),
+					written: joinWrites(writes),
 					isOk: false,
 					res: void 0,
-					err: catchVal
-				};
-				else awaited = catchVal;
+					err: caughtVal.err
+				});
+				else awaited = caughtVal.res;
 			}
 		}
 	}
 }
-function Stack(reader, initialState, joinWriters) {
-	const stack = {
-		reader,
-		initialState,
-		joinWriters,
-		exec: (m) => exec(stack, m),
-		execAsync: (m) => execAsync(stack, m)
+function execAsync(m, stackCfg) {
+	return new Promise((resolve) => execRaw(m, stackCfg, resolve));
+}
+function _Do(f) {
+	const stkFns = {
+		get,
+		ask,
+		gets,
+		asks,
+		mutate,
+		put,
+		fail,
+		tell,
+		catching,
+		reading,
+		waitFor
 	};
-	return stack;
+	return (...args) => f(stkFns, ...args);
+}
+function _DoA(f) {
+	const stkFns = {
+		get,
+		ask,
+		gets,
+		asks,
+		mutate,
+		put,
+		fail,
+		tell,
+		catching,
+		reading,
+		waitFor
+	};
+	return (...args) => f(stkFns, ...args);
+}
+function DoR(...args) {
+	return _Do(...args);
+}
+function DoR_(...args) {
+	return _Do(...args);
+}
+function DoW(...args) {
+	return _Do(...args);
+}
+function DoW_(...args) {
+	return _Do(...args);
+}
+function DoS(...args) {
+	return _Do(...args);
+}
+function DoS_(...args) {
+	return _Do(...args);
+}
+function DoE(...args) {
+	return _Do(...args);
+}
+function DoE_(...args) {
+	return _Do(...args);
+}
+function DoRW(...args) {
+	return _Do(...args);
+}
+function DoRW_(...args) {
+	return _Do(...args);
+}
+function DoRS(...args) {
+	return _Do(...args);
+}
+function DoRS_(...args) {
+	return _Do(...args);
+}
+function DoRE(...args) {
+	return _Do(...args);
+}
+function DoRE_(...args) {
+	return _Do(...args);
+}
+function DoRWS(...args) {
+	return _Do(...args);
+}
+function DoRWS_(...args) {
+	return _Do(...args);
+}
+function DoRWE(...args) {
+	return _Do(...args);
+}
+function DoRWE_(...args) {
+	return _Do(...args);
+}
+function DoRSE(...args) {
+	return _Do(...args);
+}
+function DoRSE_(...args) {
+	return _Do(...args);
+}
+function DoRWSE(...args) {
+	return _Do(...args);
+}
+function DoRWSE_(...args) {
+	return _Do(...args);
+}
+function DoWS(...args) {
+	return _Do(...args);
+}
+function DoWS_(...args) {
+	return _Do(...args);
+}
+function DoWE(...args) {
+	return _Do(...args);
+}
+function DoWE_(...args) {
+	return _Do(...args);
+}
+function DoWSE(...args) {
+	return _Do(...args);
+}
+function DoWSE_(...args) {
+	return _Do(...args);
+}
+function DoSE(...args) {
+	return _Do(...args);
+}
+function DoSE_(...args) {
+	return _Do(...args);
+}
+function DoRA(...args) {
+	return _DoA(...args);
+}
+function DoRA_(...args) {
+	return _DoA(...args);
+}
+function DoWA(...args) {
+	return _DoA(...args);
+}
+function DoWA_(...args) {
+	return _DoA(...args);
+}
+function DoSA(...args) {
+	return _DoA(...args);
+}
+function DoSA_(...args) {
+	return _DoA(...args);
+}
+function DoEA(...args) {
+	return _DoA(...args);
+}
+function DoEA_(...args) {
+	return _DoA(...args);
+}
+function DoRWA(...args) {
+	return _DoA(...args);
+}
+function DoRWA_(...args) {
+	return _DoA(...args);
+}
+function DoRSA(...args) {
+	return _DoA(...args);
+}
+function DoRSA_(...args) {
+	return _DoA(...args);
+}
+function DoREA(...args) {
+	return _DoA(...args);
+}
+function DoREA_(...args) {
+	return _DoA(...args);
+}
+function DoRWSA(...args) {
+	return _DoA(...args);
+}
+function DoRWSA_(...args) {
+	return _DoA(...args);
+}
+function DoRWEA(...args) {
+	return _DoA(...args);
+}
+function DoRWEA_(...args) {
+	return _DoA(...args);
+}
+function DoRSEA(...args) {
+	return _DoA(...args);
+}
+function DoRSEA_(...args) {
+	return _DoA(...args);
+}
+function DoRWSEA(...args) {
+	return _DoA(...args);
+}
+function DoRWSEA_(...args) {
+	return _DoA(...args);
+}
+function DoWSA(...args) {
+	return _DoA(...args);
+}
+function DoWSA_(...args) {
+	return _DoA(...args);
+}
+function DoWEA(...args) {
+	return _DoA(...args);
+}
+function DoWEA_(...args) {
+	return _DoA(...args);
+}
+function DoWSEA(...args) {
+	return _DoA(...args);
+}
+function DoWSEA_(...args) {
+	return _DoA(...args);
+}
+function DoSEA(...args) {
+	return _DoA(...args);
+}
+function DoSEA_(...args) {
+	return _DoA(...args);
 }
 //#endregion
 //#region src/id.ts
@@ -587,4 +848,4 @@ function Of() {
 	return { __typeRef: (t) => t };
 }
 //#endregion
-export { $, $$, $$_, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, proxy_exports as Proxy, SSBM, Stack, _map, _or, _without, ask, asks, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, tell, timeout, waitFor, withInd };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Ok, proxy_exports as Proxy, SSBM, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, r, reading, rs, rw, rws, s, tell, timeout, w, waitFor, withInd, ws };

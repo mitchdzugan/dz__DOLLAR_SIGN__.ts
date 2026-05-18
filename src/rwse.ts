@@ -1,32 +1,27 @@
 import { create, type Draft } from "mutative";
 import * as $ from "./core.js";
 
-type YieldVal<R, W, S, E> =
+type YieldVal<R, W, S, E, A extends boolean> =
   | { cmd: "NOOP" }
   | ([R] extends [never] ? { cmd: "NOOP" } : { cmd: "ASK"; ID: (r: R) => R })
   | ([S] extends [never] ? { cmd: "NOOP" } : { cmd: "GET" })
   | ([S] extends [never] ? { cmd: "NOOP" } : { cmd: "PUT"; val: S })
   | ([E] extends [never] ? { cmd: "NOOP" } : { cmd: "FAIL"; val: E })
-  | ([W] extends [never] ? { cmd: "NOOP" } : { cmd: "TELL"; val: W });
-
-type YieldValA<R, W, S, E> =
-  | YieldVal<R, W, S, E>
-  | { cmd: "AWAIT"; val: Promise<any>; catcher?: CatcherType<E, any> };
+  | ([W] extends [never] ? { cmd: "NOOP" } : { cmd: "TELL"; val: W })
+  | ([A] extends [false]
+      ? { cmd: "NOOP" }
+      : { cmd: "AWAIT"; val: Promise<any>; catcher?: CatcherType<E, any> });
 
 type YieldNext<R, S> = ([R] extends [never] ? { reader: any } : { reader: R }) &
   ([S] extends [never] ? { state: any } : { state: S }) & { awaited: any };
 
-type RWSE$G<M, R, W, S, E> = Generator<
-  YieldVal<R, W, S, E>,
+type RWSE$G_<M, R, W, S, E, A extends boolean> = Generator<
+  YieldVal<R, W, S, E, A>,
   M,
   YieldNext<R, S>
 >;
-
-type RWSE$GA<M, R, W, S, E> = Generator<
-  YieldValA<R, W, S, E>,
-  M,
-  YieldNext<R, S>
->;
+type RWSE$G<M, R, W, S, E> = RWSE$G_<M, R, W, S, E, false>;
+type RWSE$GA<M, R, W, S, E> = RWSE$G_<M, R, W, S, E, true>;
 
 export type R<Rt, Res = void> = RWSE$G<Res, Rt, never, never, never>;
 export type W<Wt, Res = void> = RWSE$G<Res, never, Wt, never, never>;
@@ -65,27 +60,27 @@ export type RWSA<Rt, Wt, St, Res = void> = RWSE$GA<Res, Rt, Wt, St, never>;
 export type RWSEA<Rt, Wt, St, Et, Res = void> = RWSE$GA<Res, Rt, Wt, St, Et>;
 
 export function* ask<Rt>(): R<Rt, Rt> {
-  const _val = yield { cmd: "ASK" } as YieldVal<Rt, never, never, never>;
+  const _val = yield { cmd: "ASK" } as YieldVal<Rt, never, never, never, false>;
   const val = _val as unknown as YieldNext<Rt, never>;
   return val.reader;
 }
 
 export function* get<St>(): S<St, St> {
-  const _val = yield { cmd: "GET" } as YieldVal<never, never, St, never>;
+  const _val = yield { cmd: "GET" } as YieldVal<never, never, St, never, false>;
   const val = _val as unknown as YieldNext<never, St>;
   return val.state;
 }
 
 export function* tell<Wt>(val: Wt): W<Wt> {
-  yield { cmd: "TELL", val } as YieldVal<never, Wt, never, never>;
+  yield { cmd: "TELL", val } as YieldVal<never, Wt, never, never, false>;
 }
 
 export function* put<St>(val: St): S<St> {
-  yield { cmd: "PUT", val } as YieldVal<never, never, St, never>;
+  yield { cmd: "PUT", val } as YieldVal<never, never, St, never, false>;
 }
 
 export function* fail<Et>(val: Et): E<Et> {
-  yield { cmd: "FAIL", val } as YieldVal<never, never, never, Et>;
+  yield { cmd: "FAIL", val } as YieldVal<never, never, never, Et, false>;
 }
 
 export function* waitFor<Et, Pt>(
@@ -96,7 +91,7 @@ export function* waitFor<Et, Pt>(
     cmd: "AWAIT",
     val: promise,
     catcher,
-  } as YieldValA<never, never, never, Et>;
+  } as YieldVal<never, never, never, Et, true>;
   return awaited;
 }
 
@@ -122,23 +117,51 @@ export function* mutate<St>(f: (s: Draft<St>) => void): S<St, boolean> {
   return true;
 }
 
-type StackFns<R, W, S, E> = {
-  ask: typeof ask<R>;
-  get: typeof get<S>;
-  tell: typeof tell<W>;
-  put: typeof put<S>;
-  fail: typeof fail<E>;
-  mutate: typeof mutate<S>;
-  gets: <T>(f: (s: S) => T) => RWSE$G<T, never, never, S, never>;
-  asks: <T>(f: (r: R) => T) => RWSE$G<T, R, never, never, never>;
-};
+type StackFns_<R, W, S, E, A extends boolean> = {
+  reading<R2, Res>(
+    reader: R2,
+    m: RWSE$G_<Res, R2, W, S, E, A>,
+  ): RWSE$G_<Res, R, W, S, E, A>;
+  catching<E2, Res>(
+    catcher: (e: E2) => $.Either<Res, E>,
+    m: RWSE$G_<Res, R, W, S, E2, A>,
+  ): RWSE$G_<Res, R, W, S, E, A>;
+} & ([S] extends [never]
+  ? {}
+  : {
+      get: typeof get<S>;
+      put: typeof put<S>;
+      mutate: typeof mutate<S>;
+      gets: <T>(f: (s: S) => T) => RWSE$G<T, never, never, S, never>;
+    }) &
+  ([R] extends [never]
+    ? {}
+    : {
+        asks: <T>(f: (r: R) => T) => RWSE$G<T, R, never, never, never>;
+        ask: typeof ask<R>;
+      }) &
+  ([W] extends [never]
+    ? {}
+    : {
+        tell: typeof tell<W>;
+      }) &
+  ([E] extends [never]
+    ? {}
+    : {
+        fail: typeof fail<E>;
+      }) &
+  ([A] extends [false]
+    ? {}
+    : {
+        waitFor: <Pt>(
+          promise: Promise<Pt>,
+          catcher?: CatcherType<E, Pt>,
+        ) => RWSE$GA<Pt, never, never, never, E>;
+      });
 
-type StackFnsA<R, W, S, E> = StackFns<R, W, S, E> & {
-  waitFor: <Pt>(
-    promise: Promise<Pt>,
-    catcher?: CatcherType<E, Pt>,
-  ) => RWSE$GA<Pt, never, never, never, E>;
-};
+type StackFns<R, W, S, E> = StackFns_<R, W, S, E, false>;
+
+type StackFnsA<R, W, S, E> = StackFns_<R, W, S, E, true>;
 
 export type ExecRes<W, S, E, Res> = $.Either<Res, E> & { state: S; written: W };
 
@@ -198,58 +221,75 @@ export const w = <W>(w: (...ws: W[]) => W) => STACK._w(w);
 export const ws = <W, S>(w: (...ws: W[]) => W, s: S) => STACK._w(w)._s(s);
 export const s = <S>(s: S) => STACK._s(s);
 
-export function exec<R, W, S, E, Res>(
-  m: RWSE$G<Res, R, W, S, E>,
-  stackCfg: StackConfigClass<R, W, S>,
-): ExecRes<W, S, E, Res> {
-  const stack = stackCfg as StackConfig_full<R, W, S>;
-  function joinWrites(ws: W[]): W {
-    if (stack.joinWriters) {
-      return stack.joinWriters(...ws);
-    }
-    return undefined as unknown as W;
-  }
-
-  const writes: W[] = [];
-  let state = stack.initialState as S;
+export function* reading<R2, R, W, S, E, A extends boolean, Res>(
+  reader: R2,
+  m: RWSE$G_<Res, R2, W, S, E, A>,
+): RWSE$G_<Res, R, W, S, E, A> {
+  let awaited: any;
   const g = m;
   while (true) {
+    const state = yield* get();
     const result = g.next({
       state,
-      reader: stack.reader as R,
-      awaited: null,
+      reader,
+      awaited,
     });
     if (result.done) {
-      return {
-        state,
-        written: joinWrites(writes),
-        isOk: true,
-        res: result.value,
-        err: undefined,
-      };
+      return result.value;
     } else {
-      const y = result.value;
-      if (y.cmd === "TELL") {
-        writes.push(y.val);
-      } else if (y.cmd === "PUT") {
-        state = y.val;
-      } else if (y.cmd === "FAIL") {
-        return {
-          state,
-          written: joinWrites(writes),
-          isOk: false,
-          err: y.val,
-          res: undefined,
-        };
+      awaited = yield result.value as YieldVal<R, W, S, E, A>;
+    }
+  }
+}
+
+export function* catching<E2, R, W, S, E, A extends boolean, Res>(
+  catcher: (e: E2) => $.Either<Res, E>,
+  m: RWSE$G_<Res, R, W, S, E2, A>,
+): RWSE$G_<Res, R, W, S, E, A> {
+  let awaited: any;
+  const g = m;
+  const reader = yield* ask();
+  while (true) {
+    const state = yield* get();
+    const result = g.next({
+      state,
+      reader,
+      awaited,
+    });
+    if (result.done) {
+      return result.value;
+    } else {
+      if (result.value.cmd === "FAIL") {
+        const caught = catcher(result.value.val);
+        if (caught.isOk) {
+          return caught.res;
+        } else {
+          yield { cmd: "FAIL", val: caught.err } as YieldVal<R, W, S, E, A>;
+        }
+      } else {
+        awaited = yield result.value as YieldVal<R, W, S, never, A>;
       }
     }
   }
 }
 
-export async function execAsync<R, W, S, E, Res>(
-  m: RWSE$GA<Res, R, W, S, E>,
+export function exec<R, W, S, E, Res>(
+  m: RWSE$G<Res, R, W, S, E>,
   stackCfg: StackConfigClass<R, W, S>,
-): Promise<ExecRes<W, S, E, Res>> {
+): ExecRes<W, S, E, Res> {
+  let res: undefined | ExecRes<W, S, E, Res> = undefined;
+  execRaw(m, stackCfg, (finalRes) => (res = finalRes));
+  if (!res) {
+    throw "non-terminated rwse monad";
+  }
+  return res;
+}
+
+async function execRaw<R, W, S, E, A extends boolean, Res>(
+  m: RWSE$G_<Res, R, W, S, E, A>,
+  stackCfg: StackConfigClass<R, W, S>,
+  onDone: (er: ExecRes<W, S, E, Res>) => void,
+): Promise<void> {
   const stack = stackCfg as StackConfig_full<R, W, S>;
   function joinWrites(ws: W[]): W {
     if (stack.joinWriters) {
@@ -269,13 +309,13 @@ export async function execAsync<R, W, S, E, Res>(
       awaited,
     });
     if (result.done) {
-      return {
+      return onDone({
         state,
         written: joinWrites(writes),
         isOk: true,
         res: result.value,
         err: undefined,
-      };
+      });
     } else {
       const y = result.value;
       if (y.cmd === "TELL") {
@@ -283,13 +323,13 @@ export async function execAsync<R, W, S, E, Res>(
       } else if (y.cmd === "PUT") {
         state = y.val;
       } else if (y.cmd === "FAIL") {
-        return {
+        return onDone({
           state,
           written: joinWrites(writes),
           isOk: false,
           err: y.val,
           res: undefined,
-        };
+        });
       } else if (y.cmd === "AWAIT") {
         try {
           awaited = await y.val;
@@ -301,13 +341,13 @@ export async function execAsync<R, W, S, E, Res>(
           if (!caughtVal) {
             throw err;
           } else if (!caughtVal.isOk) {
-            return {
+            return onDone({
               state,
               written: joinWrites(writes),
               isOk: false,
               res: undefined,
               err: caughtVal.err,
-            };
+            });
           } else {
             awaited = caughtVal.res;
           }
@@ -315,6 +355,13 @@ export async function execAsync<R, W, S, E, Res>(
       }
     }
   }
+}
+
+export function execAsync<R, W, S, E, Res>(
+  m: RWSE$GA<Res, R, W, S, E>,
+  stackCfg: StackConfigClass<R, W, S>,
+): Promise<ExecRes<W, S, E, Res>> {
+  return new Promise((resolve) => execRaw(m, stackCfg, resolve));
 }
 
 function _Do<R, W, S, E, Res = void, Args extends any[] = []>(
@@ -329,6 +376,9 @@ function _Do<R, W, S, E, Res = void, Args extends any[] = []>(
     put,
     fail,
     tell,
+    catching,
+    reading,
+    waitFor,
   };
   return (...args: Args) => f(stkFns, ...args);
 }
@@ -354,6 +404,8 @@ function _DoA<R, W, S, E, Res = void, Args extends any[] = []>(
     put,
     fail,
     tell,
+    catching,
+    reading,
     waitFor,
   };
   return (...args: Args) => f(stkFns, ...args);

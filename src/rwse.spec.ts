@@ -12,6 +12,11 @@ const impl: <T>(t: T) => $.RWS<{ k: string }, string, T[], string> = (<T>() =>
     return yield* M.gets((els) => els.join("|"));
   }))();
 
+const implInner = $.DoRW<string, string>(function* (M) {
+  const msg = yield* M.ask();
+  yield* M.tell(msg);
+});
+
 const impl2 = $.DoRWSE<
   { k: string },
   string,
@@ -20,7 +25,7 @@ const impl2 = $.DoRWSE<
   string,
   [number]
 >(function* (M, t) {
-  yield* M.tell("getK");
+  yield* M.reading("getK", implInner());
   yield* M.mutate((s) => s.push(t));
   const { k } = yield* M.ask();
   yield* M.tell(`k=[${k}]`);
@@ -63,9 +68,11 @@ describe("rwse", () => {
     expect(res2.res).toBe("420|69");
   });
   it("should work async", async () => {
-    const res = await $.rws({ k: "v" }, (...s: string[]) => s.join(" "), [
-      420,
-    ]).execAsync(implA(69));
+    const res = await $.rws(
+      { k: "v" },
+      (...s: string[]) => s.join(" "),
+      [420],
+    ).execAsync(implA(69));
     expect(res.written).toBe("getK k=[v]");
     expect(res.res).toBe("420|69");
   });
