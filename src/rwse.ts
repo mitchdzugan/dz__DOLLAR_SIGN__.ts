@@ -17,7 +17,7 @@ type YieldVal<W, S, E> =
 type CatcherResType<Err, Res> = undefined | ["f", Err] | ["r", Res];
 type CatcherType<Err, Res> = (
   e: any,
-  fns: {
+  Result: {
     ok: (r: Res) => CatcherResType<Err, Res>;
     err: (e: Err) => CatcherResType<Err, Res>;
   },

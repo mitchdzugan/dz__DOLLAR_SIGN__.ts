@@ -179,3 +179,15 @@ export function firsty<T>(...args: Nilable<T>[]): T | undefined {
   }
   return undefined;
 }
+
+export type Either<R, E> =
+  | { isOk: true; res: R; err: undefined }
+  | { isOk: false; err: E; res: undefined };
+
+export function Ok<R, E>(r: R): Either<R, E> {
+  return { isOk: true, res: r, err: undefined };
+}
+
+export function Err<R, E>(e: E): Either<R, E> {
+  return { isOk: false, res: undefined, err: e };
+}
