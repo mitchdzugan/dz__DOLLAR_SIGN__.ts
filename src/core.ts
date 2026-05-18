@@ -180,14 +180,19 @@ export function firsty<T>(...args: Nilable<T>[]): T | undefined {
   return undefined;
 }
 
+export type Maybe<T> = { isSome: true; val: T } | { isSome: false; val: null };
+
+export const None: <T>() => Maybe<T> = () => ({ isSome: false, val: null });
+export const Some: <T>(val: T) => Maybe<T> = (val) => ({ isSome: true, val });
+
 export type Either<R, E> =
-  | { isOk: true; res: R; err: undefined }
-  | { isOk: false; err: E; res: undefined };
+  | { isOk: true; res: R; err: null }
+  | { isOk: false; err: E; res: null };
 
 export function Ok<R, E>(r: R): Either<R, E> {
-  return { isOk: true, res: r, err: undefined };
+  return { isOk: true, res: r, err: null };
 }
 
 export function Err<R, E>(e: E): Either<R, E> {
-  return { isOk: false, res: undefined, err: e };
+  return { isOk: false, res: null, err: e };
 }

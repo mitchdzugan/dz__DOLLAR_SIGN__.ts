@@ -68,11 +68,9 @@ describe("rwse", () => {
     expect(res2.res).toBe("420|69");
   });
   it("should work async", async () => {
-    const res = await $.rws(
-      { k: "v" },
-      (...s: string[]) => s.join(" "),
-      [420],
-    ).execAsync(implA(69));
+    const res = await $.rws({ k: "v" }, (...s: string[]) => s.join(" "), [
+      420,
+    ]).execAsync(implA(69));
     expect(res.written).toBe("getK k=[v]");
     expect(res.res).toBe("420|69");
   });

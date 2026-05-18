@@ -106,17 +106,25 @@ function withInd(a) {
 function firsty(...args) {
 	for (const arg of args) if (isNotNil(arg)) return arg;
 }
+const None = () => ({
+	isSome: false,
+	val: null
+});
+const Some = (val) => ({
+	isSome: true,
+	val
+});
 function Ok(r) {
 	return {
 		isOk: true,
 		res: r,
-		err: void 0
+		err: null
 	};
 }
 function Err(e) {
 	return {
 		isOk: false,
-		res: void 0,
+		res: null,
 		err: e
 	};
 }
@@ -215,6 +223,39 @@ function* reading(reader, m) {
 		else awaited = yield result.value;
 	}
 }
+function* writing(joinWrites, m) {
+	let awaited;
+	const g = m;
+	const reader = yield* ask();
+	const writes = [];
+	while (true) {
+		const state = yield* get();
+		const result = g.next({
+			state,
+			reader,
+			awaited
+		});
+		if (result.done) return [joinWrites(...writes), result.value];
+		else if (result.value.cmd === "TELL") writes.push(result.value.val);
+		else awaited = yield result.value;
+	}
+}
+function* stating(initialState, m) {
+	let awaited;
+	const g = m;
+	const reader = yield* ask();
+	let state = initialState;
+	while (true) {
+		const result = g.next({
+			state,
+			reader,
+			awaited
+		});
+		if (result.done) return [state, result.value];
+		else if (result.value.cmd === "PUT") state = result.value.val;
+		else awaited = yield result.value;
+	}
+}
 function* catching(catcher, m) {
 	let awaited;
 	const g = m;
@@ -263,7 +304,7 @@ async function execRaw(m, stackCfg, onDone) {
 			written: joinWrites(writes),
 			isOk: true,
 			res: result.value,
-			err: void 0
+			err: null
 		});
 		else {
 			const y = result.value;
@@ -274,7 +315,7 @@ async function execRaw(m, stackCfg, onDone) {
 				written: joinWrites(writes),
 				isOk: false,
 				err: y.val,
-				res: void 0
+				res: null
 			});
 			else if (y.cmd === "AWAIT") try {
 				awaited = await y.val;
@@ -286,7 +327,7 @@ async function execRaw(m, stackCfg, onDone) {
 					state,
 					written: joinWrites(writes),
 					isOk: false,
-					res: void 0,
+					res: null,
 					err: caughtVal.err
 				});
 				else awaited = caughtVal.res;
@@ -309,6 +350,8 @@ function _Do(f) {
 		tell,
 		catching,
 		reading,
+		writing,
+		stating,
 		waitFor
 	};
 	return (...args) => f(stkFns, ...args);
@@ -325,6 +368,8 @@ function _DoA(f) {
 		tell,
 		catching,
 		reading,
+		writing,
+		stating,
 		waitFor
 	};
 	return (...args) => f(stkFns, ...args);
@@ -848,4 +893,4 @@ function Of() {
 	return { __typeRef: (t) => t };
 }
 //#endregion
-export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Ok, proxy_exports as Proxy, SSBM, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, r, reading, rs, rw, rws, s, tell, timeout, w, waitFor, withInd, ws };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, None, Ok, proxy_exports as Proxy, SSBM, Some, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };

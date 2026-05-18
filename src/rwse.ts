@@ -118,6 +118,14 @@ export function* mutate<St>(f: (s: Draft<St>) => void): S<St, boolean> {
 }
 
 type StackFns_<R, W, S, E, A extends boolean> = {
+  stating<S2, Res>(
+    initialState: S2,
+    m: RWSE$G_<Res, R, W, S2, E, A>,
+  ): RWSE$G_<[S2, Res], R, W, S, E, A>;
+  writing<W2, Res>(
+    joinWrites: (...ws: W2[]) => W2,
+    m: RWSE$G_<Res, R, W2, S, E, A>,
+  ): RWSE$G_<[W2, Res], R, W, S, E, A>;
   reading<R2, Res>(
     reader: R2,
     m: RWSE$G_<Res, R2, W, S, E, A>,
@@ -242,6 +250,59 @@ export function* reading<R2, R, W, S, E, A extends boolean, Res>(
   }
 }
 
+export function* writing<W2, R, W, S, E, A extends boolean, Res>(
+  joinWrites: (...ws: W2[]) => W2,
+  m: RWSE$G_<Res, R, W2, S, E, A>,
+): RWSE$G_<[W2, Res], R, W, S, E, A> {
+  let awaited: any;
+  const g = m;
+  const reader = yield* ask();
+  const writes: W2[] = [];
+  while (true) {
+    const state = yield* get();
+    const result = g.next({
+      state,
+      reader,
+      awaited,
+    });
+    if (result.done) {
+      return [joinWrites(...writes), result.value];
+    } else {
+      if (result.value.cmd === "TELL") {
+        writes.push(result.value.val);
+      } else {
+        awaited = yield result.value as YieldVal<R, never, S, E, A>;
+      }
+    }
+  }
+}
+
+export function* stating<S2, R, W, S, E, A extends boolean, Res>(
+  initialState: S2,
+  m: RWSE$G_<Res, R, W, S2, E, A>,
+): RWSE$G_<[S2, Res], R, W, S, E, A> {
+  let awaited: any;
+  const g = m;
+  const reader = yield* ask();
+  let state = initialState;
+  while (true) {
+    const result = g.next({
+      state,
+      reader,
+      awaited,
+    });
+    if (result.done) {
+      return [state, result.value];
+    } else {
+      if (result.value.cmd === "PUT") {
+        state = result.value.val;
+      } else {
+        awaited = yield result.value as YieldVal<R, never, S, E, A>;
+      }
+    }
+  }
+}
+
 export function* catching<E2, R, W, S, E, A extends boolean, Res>(
   catcher: (e: E2) => $.Either<Res, E>,
   m: RWSE$G_<Res, R, W, S, E2, A>,
@@ -314,7 +375,7 @@ async function execRaw<R, W, S, E, A extends boolean, Res>(
         written: joinWrites(writes),
         isOk: true,
         res: result.value,
-        err: undefined,
+        err: null,
       });
     } else {
       const y = result.value;
@@ -328,7 +389,7 @@ async function execRaw<R, W, S, E, A extends boolean, Res>(
           written: joinWrites(writes),
           isOk: false,
           err: y.val,
-          res: undefined,
+          res: null,
         });
       } else if (y.cmd === "AWAIT") {
         try {
@@ -345,7 +406,7 @@ async function execRaw<R, W, S, E, A extends boolean, Res>(
               state,
               written: joinWrites(writes),
               isOk: false,
-              res: undefined,
+              res: null,
               err: caughtVal.err,
             });
           } else {
@@ -378,6 +439,8 @@ function _Do<R, W, S, E, Res = void, Args extends any[] = []>(
     tell,
     catching,
     reading,
+    writing,
+    stating,
     waitFor,
   };
   return (...args: Args) => f(stkFns, ...args);
@@ -406,6 +469,8 @@ function _DoA<R, W, S, E, Res = void, Args extends any[] = []>(
     tell,
     catching,
     reading,
+    writing,
+    stating,
     waitFor,
   };
   return (...args: Args) => f(stkFns, ...args);

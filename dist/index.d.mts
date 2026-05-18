@@ -65,14 +65,23 @@ declare const timeout: (ms: number) => Promise<unknown>;
 declare function execAndExit(p: Promise<any>): void;
 declare function withInd<T>(a: T[]): [T, number][];
 declare function firsty<T>(...args: Nilable<T>[]): T | undefined;
+type Maybe<T> = {
+  isSome: true;
+  val: T;
+} | {
+  isSome: false;
+  val: null;
+};
+declare const None: <T>() => Maybe<T>;
+declare const Some: <T>(val: T) => Maybe<T>;
 type Either<R, E> = {
   isOk: true;
   res: R;
-  err: undefined;
+  err: null;
 } | {
   isOk: false;
   err: E;
-  res: undefined;
+  res: null;
 };
 declare function Ok<R, E>(r: R): Either<R, E>;
 declare function Err$1<R, E>(e: E): Either<R, E>;
@@ -164,6 +173,8 @@ declare function asks<Rt, Rr>(f: (s: Rt) => Rr): R$1<Rt, Rr>;
 declare function gets<St, Rr>(f: (s: St) => Rr): S<St, Rr>;
 declare function mutate<St>(f: (s: Draft<St>) => void): S<St, boolean>;
 type StackFns_<R, W, S, E, A extends boolean> = {
+  stating<S2, Res>(initialState: S2, m: RWSE$G_<Res, R$1, W, S2, E$1, A>): RWSE$G_<[S2, Res], R$1, W, S, E$1, A>;
+  writing<W2, Res>(joinWrites: (...ws: W2[]) => W2, m: RWSE$G_<Res, R$1, W2, S, E$1, A>): RWSE$G_<[W2, Res], R$1, W, S, E$1, A>;
   reading<R2, Res>(reader: R2, m: RWSE$G_<Res, R2, W, S, E$1, A>): RWSE$G_<Res, R$1, W, S, E$1, A>;
   catching<E2, Res>(catcher: (e: E2) => Either<Res, E$1>, m: RWSE$G_<Res, R$1, W, S, E2, A>): RWSE$G_<Res, R$1, W, S, E$1, A>;
 } & ([S] extends [never] ? {} : {
@@ -207,6 +218,8 @@ declare const w: <W>(w: (...ws: W[]) => W) => StackConfigClass<never, W, never>;
 declare const ws: <W, S>(w: (...ws: W[]) => W, s: S) => StackConfigClass<never, W, S>;
 declare const s: <S>(s: S) => StackConfigClass<never, never, S>;
 declare function reading<R2, R, W, S, E, A extends boolean, Res>(reader: R2, m: RWSE$G_<Res, R2, W, S, E$1, A>): RWSE$G_<Res, R$1, W, S, E$1, A>;
+declare function writing<W2, R, W, S, E, A extends boolean, Res>(joinWrites: (...ws: W2[]) => W2, m: RWSE$G_<Res, R$1, W2, S, E$1, A>): RWSE$G_<[W2, Res], R$1, W, S, E$1, A>;
+declare function stating<S2, R, W, S, E, A extends boolean, Res>(initialState: S2, m: RWSE$G_<Res, R$1, W, S2, E$1, A>): RWSE$G_<[S2, Res], R$1, W, S, E$1, A>;
 declare function catching<E2, R, W, S, E, A extends boolean, Res>(catcher: (e: E2) => Either<Res, E$1>, m: RWSE$G_<Res, R$1, W, S, E2, A>): RWSE$G_<Res, R$1, W, S, E$1, A>;
 declare function exec<R, W, S, E, Res>(m: RWSE$G<Res, R$1, W, S, E$1>, stackCfg: StackConfigClass<R$1, W, S>): ExecRes<W, S, E$1, Res>;
 declare function execAsync<R, W, S, E, Res>(m: RWSE$GA<Res, R$1, W, S, E$1>, stackCfg: StackConfigClass<R$1, W, S>): Promise<ExecRes<W, S, E$1, Res>>;
@@ -350,4 +363,4 @@ type Of<T> = Proxy<T>;
 type Unwrap<T extends Proxy<any>> = ReturnType<T["__typeRef"]>;
 declare function Of<T>(): Proxy<T>;
 //#endregion
-export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, E$1 as E, EA, Either, Err$1 as Err, ExecRes, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, Nil, Nilable, NonNil, Ok, proxy_d_exports as Proxy, R$1 as R, RA, RE, REA, RS, RSA, RSE, RSEA, RW, RWA, RWE, RWEA, RWS, RWSA, RWSEA, S, SA, SE, SEA, SSBM, SSBMChar, W, WA, WE, WEA, WS, WSA, WSE, WSEA, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, r, reading, rs, rw, rws, s, tell, timeout, w, waitFor, withInd, ws };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, E$1 as E, EA, Either, Err$1 as Err, ExecRes, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, Maybe, Nil, Nilable, NonNil, None, Ok, proxy_d_exports as Proxy, R$1 as R, RA, RE, REA, RS, RSA, RSE, RSEA, RW, RWA, RWE, RWEA, RWS, RWSA, RWSEA, S, SA, SE, SEA, SSBM, SSBMChar, Some, W, WA, WE, WEA, WS, WSA, WSE, WSEA, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, mutate, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };
