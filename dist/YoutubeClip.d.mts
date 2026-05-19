@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import "plyr-react/plyr.css";
 import * as react_jsx_runtime0 from "react/jsx-runtime";
 
 //#region src/YoutubeClip.d.ts

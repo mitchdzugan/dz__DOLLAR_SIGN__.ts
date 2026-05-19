@@ -1,8 +1,10 @@
-import { Component, createRef, type ReactNode } from "react";
+import { Component, createRef, forwardRef, type ReactNode } from "react";
 import { Resizable } from "re-resizable";
 import type { YouTubePlayer } from "youtube-player/dist/types.js";
 import YouTubePlayerImport from "youtube-player";
 import { onInterrupt, type InterruptUtil } from "./interrupt.js";
+import { usePlyr, type APITypes, Plyr, type PlyrInstance } from "plyr-react";
+import "plyr-react/plyr.css";
 
 export type YoutubeClipProps = {
   start: number;
@@ -25,10 +27,11 @@ const stateNames: Record<number, string> = {
 };
 
 class YoutubeClipImpl extends Component<YoutubeClipProps> {
-  ref = createRef<HTMLDivElement | null>();
+  ref = createRef<APITypes | null>();
   #mruProps: YoutubeClipProps;
   #player: YouTubePlayer | null = null;
   #offFn: () => void;
+  #didStart: boolean = false;
   state: { isOn: boolean };
 
   constructor(props: YoutubeClipProps) {
@@ -44,7 +47,10 @@ class YoutubeClipImpl extends Component<YoutubeClipProps> {
     offFn();
   }
 
-  getPlayer(util: InterruptUtil): YouTubePlayer | null {
+  getPlayer(util: InterruptUtil): PlyrInstance | null {
+    return this.ref.current?.plyr || null;
+    /*
+    return null;
     const player = this.#player;
     if (player) {
       return player;
@@ -75,9 +81,15 @@ class YoutubeClipImpl extends Component<YoutubeClipProps> {
       this.setState({ isOn: true });
     }
     return this.#player;
+    */
   }
 
   async onTimeUpdate(util: InterruptUtil) {
+    if (!this.state.isOn) {
+      util.addYt(() => {
+        this.setState({ isOn: true });
+      });
+    }
     const player = this.getPlayer(util);
     if (!player) {
       return;
@@ -86,9 +98,28 @@ class YoutubeClipImpl extends Component<YoutubeClipProps> {
     const frameLength = (this.#mruProps || this.props).length;
     const start = startFrame / 60;
     const end = (startFrame + frameLength + 180) / 60;
-    const currentTime = await player.getCurrentTime();
-    if (currentTime < start || currentTime > end) {
-      await player.seekTo(start, true);
+    function afterEnd(n: number) {
+      return frameLength > 0 && n > end;
+    }
+    player.muted = true;
+    const currentTime = player.currentTime;
+    if (currentTime < start || afterEnd(currentTime)) {
+      player.currentTime = start;
+    }
+    if (!player.playing && !this.#didStart) {
+      this.#didStart = true;
+      player.play();
+    } else if (player.ended) {
+      this.#didStart = true;
+      player.currentTime = start;
+      player.play();
+    } else if (
+      !player.playing &&
+      Math.abs(player.duration - player.currentTime) < 1
+    ) {
+      this.#didStart = true;
+      player.currentTime = start;
+      player.play();
     }
   }
 
@@ -152,7 +183,31 @@ class YoutubeClipImpl extends Component<YoutubeClipProps> {
               height: "100%",
             }}
           >
-            <div ref={this.ref} />
+            {!this.state.isOn ? null : (
+              <Plyr
+                crossOrigin="anonymous"
+                controls={true}
+                ref={this.ref}
+                autoPlay={true}
+                muted={true}
+                className="plyr-react plyr"
+                source={{
+                  type: "video",
+                  sources: [{ src: this.#mruProps.ytId, provider: "youtube" }],
+                }}
+                options={{
+                  controls: [],
+                  hideControls: true,
+                  youtube: {
+                    autoplay: true,
+                    controls: 1,
+                    enablejsapi: 1,
+                    modestbranding: 1,
+                    rel: 0,
+                  },
+                }}
+              />
+            )}
           </div>
           <div
             style={{
@@ -168,6 +223,7 @@ class YoutubeClipImpl extends Component<YoutubeClipProps> {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
+              pointerEvents: "none",
             }}
           >
             {this.props.loadingIndicator || null}

@@ -1,6 +1,8 @@
 import { Component, createRef } from "react";
 import { Resizable } from "re-resizable";
-import YouTubePlayerImport from "youtube-player";
+import "youtube-player";
+import { Plyr } from "plyr-react";
+import "plyr-react/plyr.css";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 //#region src/interrupt.ts
 let nextInterruptId = 1;
@@ -20,7 +22,7 @@ var InterruptManager = class {
 	constructor() {}
 	get canAddYt() {
 		const now = Date.now();
-		return !this.#lastYtAdd || now - 4500 > this.#lastYtAdd;
+		return !this.#lastYtAdd || now - 1500 > this.#lastYtAdd;
 	}
 	addYt(f) {
 		if (!this.canAddYt) return null;
@@ -49,12 +51,12 @@ function onInterrupt(f) {
 }
 //#endregion
 //#region src/YoutubeClip.tsx
-const mkYtPlayer = YouTubePlayerImport;
 var YoutubeClipImpl = class extends Component {
 	ref = createRef();
 	#mruProps;
 	#player = null;
 	#offFn;
+	#didStart = false;
 	state;
 	constructor(props) {
 		super(props);
@@ -68,35 +70,36 @@ var YoutubeClipImpl = class extends Component {
 		offFn();
 	}
 	getPlayer(util) {
-		const player = this.#player;
-		if (player) return player;
-		const ytEl = this.ref?.current;
-		if (!ytEl) return null;
-		const start = (this.#mruProps || this.props).start / 60;
-		this.#player = util.addYt(() => mkYtPlayer(ytEl, {
-			videoId: this.#mruProps.ytId,
-			playerVars: {
-				autoplay: "1",
-				mute: "1",
-				playsinline: "1",
-				start: `${Math.floor(start)}`,
-				enablejsapi: "1",
-				cc_load_policy: "3",
-				loop: "0"
-			}
-		}));
-		if (this.#player) this.setState({ isOn: true });
-		return this.#player;
+		return this.ref.current?.plyr || null;
 	}
 	async onTimeUpdate(util) {
+		if (!this.state.isOn) util.addYt(() => {
+			this.setState({ isOn: true });
+		});
 		const player = this.getPlayer(util);
 		if (!player) return;
 		const startFrame = (this.#mruProps || this.props).start;
 		const frameLength = (this.#mruProps || this.props).length;
 		const start = startFrame / 60;
 		const end = (startFrame + frameLength + 180) / 60;
-		const currentTime = await player.getCurrentTime();
-		if (currentTime < start || currentTime > end) await player.seekTo(start, true);
+		function afterEnd(n) {
+			return frameLength > 0 && n > end;
+		}
+		player.muted = true;
+		const currentTime = player.currentTime;
+		if (currentTime < start || afterEnd(currentTime)) player.currentTime = start;
+		if (!player.playing && !this.#didStart) {
+			this.#didStart = true;
+			player.play();
+		} else if (player.ended) {
+			this.#didStart = true;
+			player.currentTime = start;
+			player.play();
+		} else if (!player.playing && Math.abs(player.duration - player.currentTime) < 1) {
+			this.#didStart = true;
+			player.currentTime = start;
+			player.play();
+		}
 	}
 	async onUpdate() {
 		this.#mruProps = this.props;
@@ -150,7 +153,32 @@ var YoutubeClipImpl = class extends Component {
 						width: "100%",
 						height: "100%"
 					},
-					children: /* @__PURE__ */ jsx("div", { ref: this.ref })
+					children: !this.state.isOn ? null : /* @__PURE__ */ jsx(Plyr, {
+						crossOrigin: "anonymous",
+						controls: true,
+						ref: this.ref,
+						autoPlay: true,
+						muted: true,
+						className: "plyr-react plyr",
+						source: {
+							type: "video",
+							sources: [{
+								src: this.#mruProps.ytId,
+								provider: "youtube"
+							}]
+						},
+						options: {
+							controls: [],
+							hideControls: true,
+							youtube: {
+								autoplay: true,
+								controls: 1,
+								enablejsapi: 1,
+								modestbranding: 1,
+								rel: 0
+							}
+						}
+					})
 				}), /* @__PURE__ */ jsx("div", {
 					style: {
 						transition: "opacity 300 ease-in-out",
@@ -164,7 +192,8 @@ var YoutubeClipImpl = class extends Component {
 						background: "black",
 						display: "flex",
 						justifyContent: "center",
-						alignItems: "center"
+						alignItems: "center",
+						pointerEvents: "none"
 					},
 					children: this.props.loadingIndicator || null
 				})]

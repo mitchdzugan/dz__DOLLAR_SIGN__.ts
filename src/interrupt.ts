@@ -23,7 +23,7 @@ class InterruptManager {
 
   get canAddYt() {
     const now = Date.now();
-    return !this.#lastYtAdd || now - 4500 > this.#lastYtAdd;
+    return !this.#lastYtAdd || now - 1500 > this.#lastYtAdd;
   }
 
   addYt<T>(f: () => T): T | null {
