@@ -79,8 +79,9 @@ export function* put<St>(val: St): S<St> {
   yield { cmd: "PUT", val } as YieldVal<never, never, St, never, false>;
 }
 
-export function* fail<Et>(val: Et): E<Et> {
+export function* fail<Et, Rt>(val: Et): E<Et, Rt> {
   yield { cmd: "FAIL", val } as YieldVal<never, never, never, Et, false>;
+  return undefined as unknown as Rt;
 }
 
 export function* waitFor<Et, Pt>(
@@ -156,7 +157,7 @@ type StackFns_<R, W, S, E, A extends boolean> = {
   ([E] extends [never]
     ? {}
     : {
-        fail: typeof fail<E>;
+        fail: <Rt>(e: E) => RWSE$G<Rt, never, never, never, E>;
       }) &
   ([A] extends [false]
     ? {}

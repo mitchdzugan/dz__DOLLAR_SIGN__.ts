@@ -168,7 +168,7 @@ declare function ask<Rt>(): R$1<Rt, Rt>;
 declare function get<St>(): S<St, St>;
 declare function tell<Wt>(val: Wt): W<Wt>;
 declare function put<St>(val: St): S<St>;
-declare function fail<Et>(val: Et): E$1<Et>;
+declare function fail<Et, Rt>(val: Et): E$1<Et, Rt>;
 declare function waitFor<Et, Pt>(promise: Promise<Pt>, catcher?: CatcherType<Et, Pt>): EA<Et, Pt>;
 declare function asks<Rt, Rr>(f: (s: Rt) => Rr): R$1<Rt, Rr>;
 declare function gets<St, Rr>(f: (s: St) => Rr): S<St, Rr>;
@@ -189,7 +189,7 @@ type StackFns_<R, W, S, E, A extends boolean> = {
 }) & ([W] extends [never] ? {} : {
   tell: typeof tell<W>;
 }) & ([E$1] extends [never] ? {} : {
-  fail: typeof fail<E$1>;
+  fail: <Rt>(e: E$1) => RWSE$G<Rt, never, never, never, E$1>;
 }) & ([A] extends [false] ? {} : {
   waitFor: <Pt>(promise: Promise<Pt>, catcher?: CatcherType<E$1, Pt>) => RWSE$GA<Pt, never, never, never, E$1>;
 });
