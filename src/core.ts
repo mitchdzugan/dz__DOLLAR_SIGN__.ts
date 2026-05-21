@@ -105,6 +105,7 @@ export const SSBM = {
     Peach: ssbmChar(Character.PEACH, "Peach", "PEACH"),
     Pikachu: ssbmChar(Character.PIKACHU, "Pikachu", "PIKACHU"),
     ICs: ssbmChar(Character.ICE_CLIMBERS, "Ice Climbers", "ICE_CLIMBERS", {
+      meleeCSPDirname: "Ice Climbers",
       meleeCSPFilename: "Ice_Climbers",
     }),
     Puff: ssbmChar(Character.JIGGLYPUFF, "Jigglypuff", "JIGGLYPUFF"),
