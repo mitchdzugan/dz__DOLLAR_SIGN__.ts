@@ -77,6 +77,7 @@ const ssbmChar: typeof buildSsbmChar = (...args) => {
 };
 
 export const SSBM = {
+  GAME_FIRST_FRAME: -123,
   Char: {
     of: (id: number) => getCharById(id),
     ofSlippiApiName: (name: string) => getCharBySlippiApiName(name),

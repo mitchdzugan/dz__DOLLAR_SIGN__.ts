@@ -17,6 +17,7 @@ type SSBMChar = {
   meleeCSPFilename: string;
 };
 declare const SSBM: {
+  GAME_FIRST_FRAME: number;
   Char: {
     of: (id: number) => any;
     ofSlippiApiName: (name: string) => any;
