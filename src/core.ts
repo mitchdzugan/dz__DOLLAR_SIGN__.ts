@@ -189,6 +189,10 @@ export type Maybe<T> = { isSome: true; val: T } | { isSome: false; val: null };
 export const None: <T>() => Maybe<T> = () => ({ isSome: false, val: null });
 export const Some: <T>(val: T) => Maybe<T> = (val) => ({ isSome: true, val });
 
+export function maybe<T, R>(m: Maybe<T>, some: (t: T) => R, none: () => R): R {
+  return m.isSome ? some(m.val) : none();
+}
+
 export type Either<R, E> =
   | { isOk: true; res: R; err: null }
   | { isOk: false; err: E; res: null };

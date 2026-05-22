@@ -59,6 +59,10 @@ export type RWSA<Rt, Wt, St, Res = void> = RWSE$GA<Res, Rt, Wt, St, never>;
 
 export type RWSEA<Rt, Wt, St, Et, Res = void> = RWSE$GA<Res, Rt, Wt, St, Et>;
 
+export function* pure<Pt>(p: Pt): R<never, Pt> {
+  return p;
+}
+
 export function* ask<Rt>(): R<Rt, Rt> {
   const _val = yield { cmd: "ASK" } as YieldVal<Rt, never, never, never, false>;
   const val = _val as unknown as YieldNext<Rt, never>;
