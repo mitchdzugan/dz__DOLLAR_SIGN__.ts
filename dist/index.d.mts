@@ -1,7 +1,10 @@
 import { t as __exportAll } from "./chunk.mjs";
+import * as YAML from "js-yaml";
 import { Draft } from "mutative";
 
 //#region src/core.d.ts
+declare const enc: typeof YAML.dump;
+declare const dec: typeof YAML.load;
 type Nil = null | undefined;
 type NonNil = Exclude<any, Nil>;
 type Nilable<T extends NonNil> = T | null | undefined;
@@ -76,6 +79,9 @@ type Maybe<T> = {
 declare const None: <T>() => Maybe<T>;
 declare const Some: <T>(val: T) => Maybe<T>;
 declare function maybe<T, R>(m: Maybe<T>, some: (t: T) => R, none: () => R): R;
+declare function or<T>(m: Maybe<T>, defaultVal: T): T;
+declare function Maybe<T>(mv: undefined | T): Maybe<T>;
+declare function iMaybe<T>(m: Maybe<T>): Iterable<T>;
 type Either<R, E> = {
   isOk: true;
   res: R;
@@ -87,6 +93,7 @@ type Either<R, E> = {
 };
 declare function Ok<R, E>(r: R): Either<R, E>;
 declare function Err$1<R, E>(e: E): Either<R, E>;
+declare function Set<T>(...els: T[]): Set<T>;
 //#endregion
 //#region src/rwse.d.ts
 type YieldVal<R, W, S, E, A extends boolean> = {
@@ -366,4 +373,4 @@ type Of<T> = Proxy<T>;
 type Unwrap<T extends Proxy<any>> = ReturnType<T["__typeRef"]>;
 declare function Of<T>(): Proxy<T>;
 //#endregion
-export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, E$1 as E, EA, Either, Err$1 as Err, ExecRes, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, Maybe, Nil, Nilable, NonNil, None, Ok, proxy_d_exports as Proxy, R$1 as R, RA, RE, REA, RS, RSA, RSE, RSEA, RW, RWA, RWE, RWEA, RWS, RWSA, RWSEA, S, SA, SE, SEA, SSBM, SSBMChar, Some, W, WA, WE, WEA, WS, WSA, WSE, WSEA, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, maybe, mutate, pure, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, E$1 as E, EA, Either, Err$1 as Err, ExecRes, id_d_exports as Id, incremental_d_exports as Inc, interrupt_d_exports as Int, Maybe, Nil, Nilable, NonNil, None, Ok, proxy_d_exports as Proxy, R$1 as R, RA, RE, REA, RS, RSA, RSE, RSEA, RW, RWA, RWE, RWEA, RWS, RWSA, RWSEA, S, SA, SE, SEA, SSBM, SSBMChar, Set, Some, W, WA, WE, WEA, WS, WSA, WSE, WSEA, _map, _or, _without, ask, asks, catching, dec, enc, exec, execAndExit, execAsync, fail, firsty, get, gets, iMaybe, isNil, isNotNil, maybe, mutate, or, pure, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };

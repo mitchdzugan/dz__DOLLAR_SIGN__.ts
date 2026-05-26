@@ -1,6 +1,11 @@
+import * as YAML from "js-yaml";
 import * as SLIPPI_JS_IMP from "@slippi/slippi-js";
 const SLIPPI_JS_C_IMP: { default: typeof SLIPPI_JS_IMP } = SLIPPI_JS_IMP as any;
 const { Character } = SLIPPI_JS_C_IMP.default || SLIPPI_JS_IMP;
+import RawSetClass from "./RawSetClass";
+
+export const enc = YAML.dump;
+export const dec = YAML.load;
 
 export type Nil = null | undefined;
 export type NonNil = Exclude<any, Nil>;
@@ -193,6 +198,18 @@ export function maybe<T, R>(m: Maybe<T>, some: (t: T) => R, none: () => R): R {
   return m.isSome ? some(m.val) : none();
 }
 
+export function or<T>(m: Maybe<T>, defaultVal: T): T {
+  return m.isSome ? m.val : defaultVal;
+}
+
+export function Maybe<T>(mv: undefined | T): Maybe<T> {
+  return mv === undefined ? None() : Some(mv);
+}
+
+export function iMaybe<T>(m: Maybe<T>): Iterable<T> {
+  return m.isSome ? [m.val] : [];
+}
+
 export type Either<R, E> =
   | { isOk: true; res: R; err: null }
   | { isOk: false; err: E; res: null };
@@ -203,4 +220,8 @@ export function Ok<R, E>(r: R): Either<R, E> {
 
 export function Err<R, E>(e: E): Either<R, E> {
   return { isOk: false, res: null, err: e };
+}
+
+export function Set<T>(...els: T[]): Set<T> {
+  return new RawSetClass<T>(els);
 }

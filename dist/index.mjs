@@ -1,8 +1,14 @@
 import { t as __exportAll } from "./chunk.mjs";
+import * as YAML from "js-yaml";
 import * as SLIPPI_JS_IMP from "@slippi/slippi-js";
 import { create } from "mutative";
+//#region src/RawSetClass.ts
+var RawSetClass_default = Set;
+//#endregion
 //#region src/core.ts
 const { Character } = SLIPPI_JS_IMP.default || SLIPPI_JS_IMP;
+const enc = YAML.dump;
+const dec = YAML.load;
 function $(k) {
 	return (t) => t[k];
 }
@@ -123,6 +129,15 @@ const Some = (val) => ({
 function maybe(m, some, none) {
 	return m.isSome ? some(m.val) : none();
 }
+function or(m, defaultVal) {
+	return m.isSome ? m.val : defaultVal;
+}
+function Maybe(mv) {
+	return mv === void 0 ? None() : Some(mv);
+}
+function iMaybe(m) {
+	return m.isSome ? [m.val] : [];
+}
 function Ok(r) {
 	return {
 		isOk: true,
@@ -136,6 +151,9 @@ function Err(e) {
 		res: null,
 		err: e
 	};
+}
+function Set$1(...els) {
+	return new RawSetClass_default(els);
 }
 //#endregion
 //#region src/rwse.ts
@@ -845,12 +863,6 @@ var IderClass = class {
 function Ider(f) {
 	return new IderClass(f);
 }
-const NumIder = Ider((i) => i);
-console.log("intDict!!!");
-console.log(...NumIder.Dict([1, 5], [2, 3]).mutate(($) => {
-	$.set(1, 2);
-	$.delete(2);
-}));
 //#endregion
 //#region src/interrupt.ts
 var interrupt_exports = /* @__PURE__ */ __exportAll({ onInterrupt: () => onInterrupt });
@@ -905,4 +917,4 @@ function Of() {
 	return { __typeRef: (t) => t };
 }
 //#endregion
-export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, None, Ok, proxy_exports as Proxy, SSBM, Some, _map, _or, _without, ask, asks, catching, exec, execAndExit, execAsync, fail, firsty, get, gets, isNil, isNotNil, maybe, mutate, pure, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Maybe, None, Ok, proxy_exports as Proxy, SSBM, Set$1 as Set, Some, _map, _or, _without, ask, asks, catching, dec, enc, exec, execAndExit, execAsync, fail, firsty, get, gets, iMaybe, isNil, isNotNil, maybe, mutate, or, pure, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };

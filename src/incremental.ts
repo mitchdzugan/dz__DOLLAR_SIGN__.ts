@@ -1,4 +1,4 @@
-import type { IdLiteral } from './id.js';
+import type { IdLiteral } from "./id.js";
 
 function idKey(id: IdLiteral): string {
   const valueString = id ? `${id}` : "";
@@ -248,13 +248,3 @@ export type Ider<T extends {}> = IderClass<T>;
 export function Ider<T extends {}>(f: (t: T) => IdLiteral): Ider<T> {
   return new IderClass(f);
 }
-
-const NumIder = Ider<number>((i) => i);
-
-console.log("intDict!!!");
-console.log(
-  ...NumIder.Dict([1, 5], [2, 3]).mutate(($) => {
-    $.set(1, 2);
-    $.delete(2);
-  }),
-);

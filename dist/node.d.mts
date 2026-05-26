@@ -6,13 +6,32 @@ import * as events0 from "events";
 //#region src/node.d.ts
 declare function imageToBase64DataUrl(filePath: string, mimeType: string): Promise<string>;
 declare function exists(path: string): Promise<boolean>;
+type PathBuilder = ((...args: string[]) => string) & {
+  partial: (...args: string[]) => PathBuilder;
+};
+declare function PathBuilder(...args: string[]): PathBuilder;
+type AppPathBuilders = {
+  config: PathBuilder;
+  log: PathBuilder;
+  data: PathBuilder;
+  temp: PathBuilder;
+  cache: PathBuilder;
+};
+type AppPathOpts = {
+  suffix?: string;
+  asDataSubdir?: Set<keyof AppPathBuilders>;
+};
+declare function AppPathBuilders(appName: string, opts?: AppPathOpts): AppPathBuilders;
 declare const fs: {
   imageToBase64DataUrl: typeof imageToBase64DataUrl;
   exists: typeof exists;
   readString: (p: string) => Promise<string | void>;
   writeString: (p: string, c: string) => Promise<void>;
-  slurp: (p: string) => Promise<object | undefined>;
-  spit: (p: string, obj: object) => Promise<void>;
+  slurp: <T extends Object>(p: string) => Promise<T | undefined>;
+  slurp1stCfg: <T extends Object>(p: string) => Promise<T | undefined>;
+  spit: <T extends object>(p: string, obj: T) => Promise<void>;
+  PathBuilder: typeof PathBuilder;
+  AppPathBuilders: typeof AppPathBuilders;
   access(path: fs0.PathLike, mode?: number): Promise<void>;
   copyFile(src: fs0.PathLike, dest: fs0.PathLike, mode?: number): Promise<void>;
   open(path: fs0.PathLike, flags?: string | number, mode?: fs0.Mode): Promise<nodeFs.FileHandle>;
