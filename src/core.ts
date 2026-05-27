@@ -1,7 +1,6 @@
 import * as YAML from "js-yaml";
-import * as SLIPPI_JS_IMP from "@slippi/slippi-js";
-const SLIPPI_JS_C_IMP: { default: typeof SLIPPI_JS_IMP } = SLIPPI_JS_IMP as any;
-const { Character } = SLIPPI_JS_C_IMP.default || SLIPPI_JS_IMP;
+import * as Slp from "./slp.js";
+import { Character } from "@slippi/slippi-js";
 import RawSetClass from "./RawSetClass";
 
 export const enc = YAML.dump;
@@ -82,6 +81,7 @@ const ssbmChar: typeof buildSsbmChar = (...args) => {
 };
 
 export const SSBM = {
+  Slp,
   GAME_FIRST_FRAME: -123,
   Char: {
     of: (id: number) => getCharById(id),
@@ -224,4 +224,14 @@ export function Err<R, E>(e: E): Either<R, E> {
 
 export function Set<T>(...els: T[]): Set<T> {
   return new RawSetClass<T>(els);
+}
+
+export type Props = Record<string, any>;
+
+export function chunk<T>(a: T[], chunkSize: number = 100): T[][] {
+  const res = [];
+  for (let i = 0; i < a.length; i += chunkSize) {
+    res.push([...a.slice(i, i + 100)]);
+  }
+  return res;
 }
