@@ -70,7 +70,7 @@
     "modern",
     "minimal"
   ],
-  "dependencies": {
+  "peerDependencies": {
     "@slippi/slippi-js": "9.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.2.14",
