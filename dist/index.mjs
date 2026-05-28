@@ -1,6 +1,6 @@
 import { t as __exportAll } from "./chunk.mjs";
 import * as YAML from "js-yaml";
-import { Character } from "@slippi/slippi-js";
+import { Character, SlippiGame } from "@slippi/slippi-js";
 import { create } from "mutative";
 //#region src/id.ts
 var id_exports = /* @__PURE__ */ __exportAll({ of: () => of });
@@ -236,7 +236,7 @@ var SlpGame = class {
 	}
 };
 function parseIntakeGame(b) {
-	const slpGame = new SlippiGameCons(b);
+	const slpGame = new SlippiGame(b);
 	const slpGame_ = new SlpGame(slpGame);
 	const stats = slpGame.getStats();
 	const settings = slpGame.getSettings();

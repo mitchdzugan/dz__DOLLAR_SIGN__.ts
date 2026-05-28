@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { mkdirp } from "mkdirp";
 import envPaths from "env-paths";
 import * as YAML from "js-yaml";
-import { Character } from "@slippi/slippi-js";
+import { Character, SlippiGame } from "@slippi/slippi-js";
 //#region \0rolldown/runtime.js
 var __defProp = Object.defineProperty;
 var __exportAll = (all, no_symbols) => {
@@ -249,7 +249,7 @@ var SlpGame = class {
 	}
 };
 function parseIntakeGame(b) {
-	const slpGame = new SlippiGameCons(b);
+	const slpGame = new SlippiGame(b);
 	const slpGame_ = new SlpGame(slpGame);
 	const stats = slpGame.getStats();
 	const settings = slpGame.getSettings();

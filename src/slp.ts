@@ -211,7 +211,7 @@ class SlpGame {
 }
 
 export function parseIntakeGame(b: NodeJS.ArrayBufferView): IntakeGame {
-  const slpGame = new SlippiGameCons(b);
+  const slpGame = new SlippiGame(b);
   const slpGame_ = new SlpGame(slpGame);
   const stats = slpGame.getStats();
   const settings = slpGame.getSettings();
