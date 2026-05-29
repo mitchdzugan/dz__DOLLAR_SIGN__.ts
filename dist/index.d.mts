@@ -26,7 +26,10 @@ declare const Props: (props: Props) => Props;
 declare function parseIntakeGame(b: NodeJS.ArrayBufferView): IntakeGame;
 //#endregion
 //#region src/core.d.ts
-declare const enc: typeof YAML.dump;
+type EncodeOpts = {
+  yaml?: boolean;
+};
+declare function enc<T extends object>(t: T, opts?: EncodeOpts): string;
 declare const dec: typeof YAML.load;
 type Nil = null | undefined;
 type NonNil = Exclude<any, Nil>;

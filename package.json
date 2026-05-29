@@ -71,9 +71,16 @@
     "minimal"
   ],
   "peerDependencies": {
+    "@types/react": "^19.2.14",
+    "plyr": "^3.8.4",
+    "plyr-react": "^6.0.0",
+    "re-resizable": "^6.11.2",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.6"
+  },
+  "dependencies": {
     "@slippi/slippi-js": "9.0.0",
     "@types/js-yaml": "^4.0.9",
-    "@types/react": "^19.2.14",
     "@types/youtube-player": "^5.5.11",
     "classnames": "^2.5.1",
     "env-paths": "^4.0.0",
@@ -83,8 +90,9 @@
     "plyr": "^3.8.4",
     "plyr-react": "^6.0.0",
     "re-resizable": "^6.11.2",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.6",
+    "unified": "^11.0.5",
+    "uniorg": "^1.4.0",
+    "uniorg-parse": "^3.2.1",
     "youtube-player": "^5.6.0"
   }
 }

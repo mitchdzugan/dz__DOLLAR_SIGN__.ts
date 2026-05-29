@@ -3,7 +3,14 @@ import * as Slp from "./slp.js";
 import { Character } from "@slippi/slippi-js";
 import RawSetClass from "./RawSetClass";
 
-export const enc = YAML.dump;
+type EncodeOpts = { yaml?: boolean };
+
+export function enc<T extends object>(t: T, opts: EncodeOpts = {}): string {
+  if (opts.yaml) {
+    return YAML.dump(t);
+  }
+  return JSON.stringify(t);
+}
 export const dec = YAML.load;
 
 export type Nil = null | undefined;

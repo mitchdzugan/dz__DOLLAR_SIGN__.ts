@@ -426,7 +426,10 @@ function parseIntakeGame(b) {
 }
 //#endregion
 //#region src/core.ts
-const enc = YAML.dump;
+function enc(t, opts = {}) {
+	if (opts.yaml) return YAML.dump(t);
+	return JSON.stringify(t);
+}
 const dec = YAML.load;
 function $$(k) {
 	return (obj) => obj[k];

@@ -416,7 +416,10 @@ function parseIntakeGame(b) {
 var RawSetClass_default = Set;
 //#endregion
 //#region src/core.ts
-const enc = YAML.dump;
+function enc(t, opts = {}) {
+	if (opts.yaml) return YAML.dump(t);
+	return JSON.stringify(t);
+}
 const dec = YAML.load;
 function $(k) {
 	return (t) => t[k];
