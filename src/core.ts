@@ -1,7 +1,8 @@
+import { Character } from "@slippi/slippi-js";
 import * as YAML from "js-yaml";
 import * as Slp from "./slp.js";
-import { Character } from "@slippi/slippi-js";
-import RawSetClass from "./RawSetClass";
+import RawSetClass from "./RawSetClass.js";
+import { type IdLiteral } from "./id.js";
 
 type EncodeOpts = { yaml?: boolean };
 
@@ -242,3 +243,28 @@ export function chunk<T>(a: T[], chunkSize: number = 100): T[][] {
   }
   return res;
 }
+
+export function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return hash;
+}
+
+export function assertNonNil<T>(v: Nilable<T>, msg?: string): asserts v is T {
+  if (v === undefined || v === null) {
+    throw new Error(msg || "Nil value");
+  }
+}
+
+export function envVar(varname: string, defaultValue?: string): string {
+  const rawVarval = process.env[varname];
+  const varval = rawVarval === undefined ? defaultValue : rawVarval;
+  assertNonNil(varval, `No value for ENV VAR  [ ${varname} ]`);
+  return varval;
+}
+
+type DataTerminal = number | boolean | string | symbol | null | undefined;

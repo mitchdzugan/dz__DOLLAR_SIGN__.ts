@@ -1,9 +1,10 @@
 import * as nodeFs from "node:fs/promises";
-import * as path from "node:path";
+import * as nodePath from "node:path";
 import { mkdirp } from "mkdirp";
 import envPaths from "env-paths";
-import * as YAML from "js-yaml";
 import { Character, SlippiGame } from "@slippi/slippi-js";
+import * as YAML from "js-yaml";
+import { GraphQLClient, gql } from "graphql-request";
 //#region \0rolldown/runtime.js
 var __defProp = Object.defineProperty;
 var __exportAll = (all, no_symbols) => {
@@ -510,6 +511,7 @@ const SSBM = {
 		Invalid: ssbmChar(-1, "", "")
 	}
 };
+const timeout = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const None = () => ({
 	isSome: false,
 	val: null
@@ -524,8 +526,20 @@ function Maybe(mv) {
 function iMaybe(m) {
 	return m.isSome ? [m.val] : [];
 }
+function simpleHash(str) {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash |= 0;
+	}
+	return hash;
+}
+function assertNonNil(v, msg) {
+	if (v === void 0 || v === null) throw new Error(msg || "Nil value");
+}
 //#endregion
-//#region src/node.ts
+//#region src/node_core.ts
 async function imageToBase64DataUrl(filePath, mimeType) {
 	const fileData = await fs.readFile(filePath);
 	return `data:${mimeType};base64,${Buffer.from(fileData).toString("base64")}`;
@@ -559,11 +573,12 @@ function AppPathBuilders(appName, opts = {}) {
 		cache: getBuilder("cache")
 	};
 }
+const path = { ...nodePath };
 const fs = {
 	...nodeFs,
 	imageToBase64DataUrl,
 	exists,
-	readString: (p) => fs.readFile(p, "utf-8").catch(() => {}),
+	readString: (p) => fs.readFile(p, "utf-8").catch(() => void 0),
 	writeString: (p, c) => mkdirp(path.dirname(p)).then(() => fs.writeFile(p, c)).catch(() => {}),
 	slurp: (p) => {
 		return fs.readFile(p, "utf-8").then((s) => dec(s)).catch(() => void 0);
@@ -580,4 +595,50 @@ const fs = {
 	AppPathBuilders
 };
 //#endregion
-export { fs };
+//#region src/node.ts
+async function gqlRequest(opts) {
+	const { queryName, queryDir, apiUrl, cachePath } = opts;
+	const log = opts.log || (() => {});
+	const vars = opts.vars || {};
+	const networkControl = opts.networkControl || "use-cache";
+	const queryPath = path.join(queryDir, `${queryName}.gql`);
+	const query = await fs.readString(queryPath);
+	assertNonNil(query);
+	const client = new GraphQLClient(apiUrl, !opts.authToken ? {} : { headers: { authorization: `Bearer ${opts.authToken}` } });
+	const keys = Object.keys(vars || {});
+	keys.sort();
+	if (keys.length === 2 && keys[0] === "page" && keys[1] === "phaseGroupId") keys.reverse();
+	const qkey = simpleHash((() => {
+		let qkey_ = `${query}|${queryName}`;
+		if (keys.length === 0) return `${qkey_}|`;
+		for (const key of keys) qkey_ += `|${vars[key]}`;
+		return qkey_;
+	})());
+	function getQpathCached() {
+		assertNonNil(cachePath);
+		return path.join(cachePath, `${queryName}.${qkey}`);
+	}
+	const cached = await (async () => {
+		try {
+			if (!cachePath || networkControl === "force-fetch") return;
+			return [await fs.slurp(getQpathCached())];
+		} catch (_) {
+			return;
+		}
+	})();
+	if (cached) return cached[0];
+	if (networkControl === "cache-only") return;
+	const q = gql(query.split("\n"));
+	log("sgg:graphql", `![${queryName}]`, `![${JSON.stringify(vars)}]`);
+	await timeout(6 * 1e3);
+	const res = client.request({
+		document: q,
+		...vars ? { variables: vars } : {}
+	});
+	try {
+		await fs.writeFile(getQpathCached(), JSON.stringify(res));
+	} catch (_e) {}
+	return res;
+}
+//#endregion
+export { fs, gqlRequest, path };

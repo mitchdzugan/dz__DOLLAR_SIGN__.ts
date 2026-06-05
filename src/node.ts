@@ -1,101 +1,86 @@
-import * as nodeFs from "node:fs/promises";
-import * as path from "node:path";
-import { mkdirp } from "mkdirp";
-import envPaths from "env-paths";
+export * from "./node_core.js";
+import { GraphQLClient, gql } from "graphql-request";
+import { fs, path } from "./node_core.js";
 import * as $ from "./core.js";
 
-async function imageToBase64DataUrl(filePath: string, mimeType: string) {
-  const fileData = await fs.readFile(filePath);
-  const base64Image = Buffer.from(fileData).toString("base64");
-  const dataUrl = `data:${mimeType};base64,${base64Image}`;
-  return dataUrl;
-}
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await fs.access(path);
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
-type PathBuilder = ((...args: string[]) => string) & {
-  partial: (...args: string[]) => PathBuilder;
+type GqlQueryOpts = {
+  apiUrl: string;
+  queryName: string;
+  queryDir: string;
+  vars?: Record<string, string | number | boolean | null>;
+  authToken?: string;
+  log?: (...s: string[]) => void;
+  networkControl?: "use-cache" | "cache-only" | "force-fetch";
+  cachePath?: string;
 };
 
-function PathBuilder(...args: string[]): PathBuilder {
-  function build(...subargs: string[]) {
-    return path.join(...args, ...subargs);
+export async function gqlRequest(opts: GqlQueryOpts) {
+  const { queryName, queryDir, apiUrl, cachePath } = opts;
+  const log = opts.log || (() => {});
+  const vars = opts.vars || {};
+  const networkControl = opts.networkControl || "use-cache";
+  const queryPath = path.join(queryDir, `${queryName}.gql`);
+  const query = await fs.readString(queryPath);
+  $.assertNonNil(query);
+  const client = new GraphQLClient(
+    apiUrl,
+    !opts.authToken
+      ? {}
+      : {
+          headers: { authorization: `Bearer ${opts.authToken}` },
+        },
+  );
+  const keys = Object.keys(vars || {});
+  keys.sort();
+  if (keys.length === 2 && keys[0] === "page" && keys[1] === "phaseGroupId") {
+    keys.reverse();
   }
-  return Object.assign(build, {
-    partial: (...subargs: string[]) => PathBuilder(...args, ...subargs),
-  });
-}
+  const qkey = $.simpleHash(
+    (() => {
+      let qkey_ = `${query}|${queryName}`;
+      if (keys.length === 0) {
+        return `${qkey_}|`;
+      }
+      for (const key of keys) {
+        qkey_ += `|${vars[key]}`;
+      }
+      return qkey_;
+    })(),
+  );
 
-type AppPathBuilders = {
-  config: PathBuilder;
-  log: PathBuilder;
-  data: PathBuilder;
-  temp: PathBuilder;
-  cache: PathBuilder;
-};
-type AppPathOpts = {
-  suffix?: string;
-  asDataSubdir?: Set<keyof AppPathBuilders>;
-};
-function AppPathBuilders(
-  appName: string,
-  opts: AppPathOpts = {},
-): AppPathBuilders {
-  const suffix = opts.suffix || "";
-  const asDataSubdir = opts.asDataSubdir || new Set();
-  const paths = envPaths(appName, { suffix });
-  function getBuilder(k: keyof AppPathBuilders) {
-    const isSubdir = asDataSubdir.has(k);
-    return isSubdir ? PathBuilder(paths.data, paths[k]) : PathBuilder(paths[k]);
+  function getQpathCached(): string {
+    $.assertNonNil(cachePath);
+    return path.join(cachePath, `${queryName}.${qkey}`);
   }
-  return {
-    config: getBuilder("config"),
-    log: getBuilder("log"),
-    data: getBuilder("data"),
-    temp: getBuilder("temp"),
-    cache: getBuilder("cache"),
-  };
-}
 
-export const fs = {
-  ...nodeFs,
-  imageToBase64DataUrl,
-  exists,
-  readString: (p: string) => fs.readFile(p, "utf-8").catch(() => {}),
-  writeString: (p: string, c: string) =>
-    mkdirp(path.dirname(p))
-      .then(() => fs.writeFile(p, c))
-      .catch(() => {}),
-  slurp: <T extends Object>(p: string): Promise<T | undefined> => {
-    return fs
-      .readFile(p, "utf-8")
-      .then((s) => $.dec(s) as unknown as T)
-      .catch(() => undefined);
-  },
-  slurp1stCfg: async <T extends Object>(p: string): Promise<T | undefined> => {
-    for (const res of $.iMaybe($.Maybe(await fs.slurp<T>(`${p}.yaml`)))) {
-      return res;
+  const cached = await (async () => {
+    try {
+      if (!cachePath || networkControl === "force-fetch") {
+        return undefined;
+      }
+      return [await fs.slurp(getQpathCached())];
+    } catch (_) {
+      return undefined;
     }
-    for (const res of $.iMaybe($.Maybe(await fs.slurp<T>(`${p}.json`)))) {
-      return res;
-    }
-    for (const res of $.iMaybe($.Maybe(await fs.slurp<T>(p)))) {
-      return res;
-    }
+  })();
+  if (cached) {
+    return cached[0];
+  }
+  if (networkControl === "cache-only") {
     return undefined;
-  },
-  spit: <T extends object>(p: string, obj: T) => {
-    return Promise.resolve(obj)
-      .then((o) => fs.writeString(p, $.enc(o)))
-      .catch(() => {});
-  },
-  PathBuilder,
-  AppPathBuilders,
-};
+  }
+  const q = gql(query.split("\n") as any);
+  log("sgg:graphql", `![${queryName}]`, `![${JSON.stringify(vars)}]`);
+  await $.timeout(6 * 1000);
+  const res = client.request<any, any>({
+    document: q,
+    ...(vars ? { variables: vars } : {}),
+  });
+  try {
+    await fs.writeFile(getQpathCached(), JSON.stringify(res));
+  } catch (_e) {
+    // console.log(`FETCH::[ ${qname}.${qkey} ]  ERROR`);
+    // console.log(_e);
+  }
+  return res;
+}

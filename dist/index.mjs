@@ -1,6 +1,6 @@
 import { t as __exportAll } from "./chunk.mjs";
-import * as YAML from "js-yaml";
 import { Character, SlippiGame } from "@slippi/slippi-js";
+import * as YAML from "js-yaml";
 import { create } from "mutative";
 //#region src/id.ts
 var id_exports = /* @__PURE__ */ __exportAll({ of: () => of });
@@ -572,6 +572,24 @@ function chunk(a, chunkSize = 100) {
 	const res = [];
 	for (let i = 0; i < a.length; i += chunkSize) res.push([...a.slice(i, i + 100)]);
 	return res;
+}
+function simpleHash(str) {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash |= 0;
+	}
+	return hash;
+}
+function assertNonNil(v, msg) {
+	if (v === void 0 || v === null) throw new Error(msg || "Nil value");
+}
+function envVar(varname, defaultValue) {
+	const rawVarval = process.env[varname];
+	const varval = rawVarval === void 0 ? defaultValue : rawVarval;
+	assertNonNil(varval, `No value for ENV VAR  [ ${varname} ]`);
+	return varval;
 }
 //#endregion
 //#region src/rwse.ts
@@ -1232,4 +1250,4 @@ function Of() {
 	return { __typeRef: (t) => t };
 }
 //#endregion
-export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Maybe, None, Ok, proxy_exports as Proxy, SSBM, Set$1 as Set, Some, _map, _or, _without, ask, asks, catching, chunk, dec, enc, exec, execAndExit, execAsync, fail, firsty, get, gets, iMaybe, isNil, isNotNil, maybe, mutate, or, pure, put, r, reading, rs, rw, rws, s, stating, tell, timeout, w, waitFor, withInd, writing, ws };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Maybe, None, Ok, proxy_exports as Proxy, SSBM, Set$1 as Set, Some, _map, _or, _without, ask, asks, assertNonNil, catching, chunk, dec, enc, envVar, exec, execAndExit, execAsync, fail, firsty, get, gets, iMaybe, isNil, isNotNil, maybe, mutate, or, pure, put, r, reading, rs, rw, rws, s, simpleHash, stating, tell, timeout, w, waitFor, withInd, writing, ws };

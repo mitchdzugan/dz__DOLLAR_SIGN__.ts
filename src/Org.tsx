@@ -1,12 +1,14 @@
-import { createElement, useEffect, type ReactNode } from "react";
+// import { createElement, useEffect, type ReactNode } from "react";
 import { unified } from "unified";
-import type { ObjectType, OrgData } from "uniorg";
+// import type { ObjectType, OrgData } from "uniorg";
+import type { OrgData } from "uniorg";
 import uniorgParse from "uniorg-parse";
 
 export function orgParse(s: string): OrgData {
   return unified().use(uniorgParse).parse(s);
 }
 
+/*
 function mkScroller(headerId: string) {
   return () => {
     const header = document.getElementById(headerId);
@@ -88,7 +90,7 @@ function OrgView(props: { orgString: string; headerId?: string }) {
               c6(sectionDepth).hbBright,
             )}
           />
-            */
+            * /
           }
           <div style={{ flex: "1" }}>{children}</div>
         </div>
@@ -307,3 +309,4 @@ function NoteTreeNodeUI(props: { node: NoteTreeNode }) {
     </li>
   );
 }
+*/
