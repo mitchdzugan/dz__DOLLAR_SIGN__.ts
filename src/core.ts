@@ -256,7 +256,7 @@ export function simpleHash(str: string): number {
 
 export function assertNonNil<T>(v: Nilable<T>, msg?: string): asserts v is T {
   if (v === undefined || v === null) {
-    throw new Error(msg || "Nil value");
+    throw new Error(msg || "unhandled nil value");
   }
 }
 
@@ -267,4 +267,10 @@ export function envVar(varname: string, defaultValue?: string): string {
   return varval;
 }
 
-type DataTerminal = number | boolean | string | symbol | null | undefined;
+export function psuedoRng(seed: number) {
+  let state = seed;
+  return function () {
+    state = (1664525 * state + 1013904223) % 4294967296;
+    return state / 4294967296;
+  };
+}

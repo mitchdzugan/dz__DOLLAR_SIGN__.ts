@@ -4,3 +4,4 @@ export * as Id from "./id.js";
 export * as Inc from "./incremental.js";
 export * as Int from "./interrupt.js";
 export * as Proxy from "./proxy.js";
+export type Arg1<F extends (...args: any[]) => any> = Parameters<F>[0];

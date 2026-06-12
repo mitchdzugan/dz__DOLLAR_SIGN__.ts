@@ -1,4 +1,5 @@
 import type { IdLiteral } from "./id.js";
+import * as Proxy from "./proxy.js";
 
 function idKey(id: IdLiteral): string {
   const valueString = id ? `${id}` : "";
@@ -74,8 +75,8 @@ interface Dict_r<K, T extends {}> {
   lookup(k: K): Opt<T>;
   key(k: K): string;
   src: BaseDict_r<K, T>;
-  changed: boolean;
-  changes: DictKeyMutation<T>[];
+  isChanged: boolean;
+  changes: DictKeyMutations<K, T>[];
   mutate(mutater: (dm: DictMut_r<K, T>) => void): Dict_r<K, T>;
 }
 
@@ -96,10 +97,10 @@ class BaseDict_r<K, T extends {}> implements Dict_r<K, T> {
   get src(): BaseDict_r<K, T> {
     throw "unimplemented";
   }
-  get changes(): DictKeyMutation<T>[] {
+  get changes(): DictKeyMutations<K, T>[] {
     throw "unimplemented";
   }
-  get changed(): boolean {
+  get isChanged(): boolean {
     return this.changes.length > 0;
   }
 }
@@ -107,7 +108,11 @@ class BaseDict_r<K, T extends {}> implements Dict_r<K, T> {
 class MutatedDict<K, V extends {}> extends BaseDict_r<K, V> {
   #base: Dict_r<K, V>;
   #mutations: DictMutations<K, V>;
+  #changes: null | DictKeyMutations<K, V>[] = null;
   #iterated?: [K, V][];
+  #sizeDelta: number = 0;
+  #lookupCache: Record<string, Opt<V>> = {};
+  #lookupCacheSize: number = 0;
 
   constructor(base: Dict_r<K, V>, mutater: (dm: DictMut_r<K, V>) => void) {
     super();
@@ -126,11 +131,19 @@ class MutatedDict<K, V extends {}> extends BaseDict_r<K, V> {
   addMutation(k: K, m: DictKeyMutation<V>) {
     const id = this.key(k);
     const currMutation = this.#mutations[id];
+    const isDel = m[0] === "del";
     if (currMutation) {
+      const wasDel = currMutation[2][0] === "del";
       currMutation[3].push(currMutation[2]);
       currMutation[2] = m;
+      this.#sizeDelta += isDel ? (wasDel ? 0 : -1) : wasDel ? 1 : 0;
     } else {
-      this.#mutations[id] = [k, this.lookup(k), m, []];
+      const currVal = this.#base.lookup(k);
+      this.#sizeDelta += currVal.case(
+        () => (isDel ? -1 : 0),
+        () => (isDel ? 0 : 1),
+      );
+      this.#mutations[id] = [k, currVal, m, []];
     }
   }
 
@@ -178,13 +191,49 @@ class MutatedDict<K, V extends {}> extends BaseDict_r<K, V> {
     })();
   }
 
+  #lookupCached(_k: K, id: string): Opt<Opt<V>> {
+    return Opt(this.#lookupCache[id]);
+  }
+
+  #lookupRaw(k: K, id: string) {
+    return Opt(this.#mutations[id]).case(
+      (mkv) => Opt(mkv[2][0] === "del" ? undefined : mkv[2][1]),
+      () => this.#base.lookup(k),
+    );
+  }
+
+  #lookupPreFull(k: K, id: string): Opt<V> {
+    const cachedVal = this.#lookupCached(k, id);
+    const resVal = cachedVal.case(
+      (v) => v,
+      () => {
+        const rawRes = this.#lookupRaw(k, id);
+        this.#lookupCacheSize += rawRes.case(
+          () => 1,
+          () => 0,
+        );
+        return rawRes;
+      },
+    );
+    this.#lookupCache[id] = resVal;
+    return resVal;
+  }
+
   lookup(k: K): Opt<V> {
     const id = this.key(k);
-    return Opt<V>(undefined);
+    return this.#lookupPreFull(k, id);
   }
 
   mutate(mutater: (dm: DictMut_r<K, V>) => void): Dict_r<K, V> {
     return new MutatedDict(this, mutater);
+  }
+
+  get changes() {
+    return (this.#changes ||= Object.values(this.#mutations));
+  }
+
+  get src() {
+    return this.#base;
   }
 }
 
@@ -242,9 +291,40 @@ class IderClass<T> {
   Dict<V extends {}>(...entries: [T, V][]) {
     return new PureDict_r(this.#toId, entries);
   }
+
+  id(t: T): IdLiteral {
+    return this.#toId(t);
+  }
 }
 
 export type Ider<T extends {}> = IderClass<T>;
-export function Ider<T extends {}>(f: (t: T) => IdLiteral): Ider<T> {
-  return new IderClass(f);
+export const Ider = {
+  Lit: new IderClass<IdLiteral>((id) => id),
+  Num: new IderClass<number>((id) => id),
+  Str: new IderClass<string>((id) => id),
+  for: <T extends {}>(f: (t: T) => IdLiteral): Ider<T> => new IderClass(f),
+};
+
+class ZDataClass<T extends Record<string, ZData>> {
+  zdata: T;
+  constructor(data: T) {
+    this.zdata = data;
+  }
+}
+
+type ZData = null | string | number | boolean | ZData[] | ZDataClass<any>;
+
+type ZObjType<T> = { [K in keyof T]: ZData };
+type ZObjProxyType<T extends ZObjType<any>> = {
+  [K in keyof T]: Proxy.Of<T[K]>;
+};
+
+export type ZObj<T extends ZObjType<T>> = ZDataClass<T> & T;
+export function ZObj<T extends ZObjType<T>>(data: T): ZObj<T> {
+  const res = new ZDataClass(data);
+  return Object.assign(res, data);
+}
+
+export function defZObj<T extends ZObjType<T>>(proxy: ZObjProxyType<T>) {
+  return ZObj<T>;
 }
