@@ -536,7 +536,7 @@ function simpleHash(str) {
 	return hash;
 }
 function assertNonNil(v, msg) {
-	if (v === void 0 || v === null) throw new Error(msg || "Nil value");
+	if (v === void 0 || v === null) throw new Error(msg || "unhandled nil value");
 }
 //#endregion
 //#region src/node_core.ts
@@ -596,6 +596,11 @@ const fs = {
 };
 //#endregion
 //#region src/node.ts
+const GQLNetworkControl = {
+	useCache: "use-cache",
+	cacheOnly: "cache-only",
+	forceFetch: "force-fetch"
+};
 async function gqlRequest(opts) {
 	const { queryName, queryDir, apiUrl, cachePath } = opts;
 	const log = opts.log || (() => {});
@@ -621,7 +626,9 @@ async function gqlRequest(opts) {
 	const cached = await (async () => {
 		try {
 			if (!cachePath || networkControl === "force-fetch") return;
-			return [await fs.slurp(getQpathCached())];
+			const res = await fs.slurp(getQpathCached());
+			assertNonNil(res);
+			return [res];
 		} catch (_) {
 			return;
 		}
@@ -631,14 +638,15 @@ async function gqlRequest(opts) {
 	const q = gql(query.split("\n"));
 	log("sgg:graphql", `![${queryName}]`, `![${JSON.stringify(vars)}]`);
 	await timeout(6 * 1e3);
-	const res = client.request({
+	const res = await client.request({
 		document: q,
 		...vars ? { variables: vars } : {}
 	});
 	try {
+		console.log({ res });
 		await fs.writeFile(getQpathCached(), JSON.stringify(res));
 	} catch (_e) {}
 	return res;
 }
 //#endregion
-export { fs, gqlRequest, path };
+export { GQLNetworkControl, fs, gqlRequest, path };

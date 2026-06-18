@@ -313,18 +313,69 @@ class ZDataClass<T extends Record<string, ZData>> {
 }
 
 type ZData = null | string | number | boolean | ZData[] | ZDataClass<any>;
-
+type ZBin = Map<IdLiteral, any>;
+type ZObjMeta<T extends ZObjType<T>> = [T, ZBin, ZObjProxyType<T>];
 type ZObjType<T> = { [K in keyof T]: ZData };
 type ZObjProxyType<T extends ZObjType<any>> = {
   [K in keyof T]: Proxy.Of<T[K]>;
 };
+type ZObj<T extends ZObjType<T>> = (() => ZObjMeta<T>) & T;
 
-export type ZObj<T extends ZObjType<T>> = ZDataClass<T> & T;
-export function ZObj<T extends ZObjType<T>>(data: T): ZObj<T> {
-  const res = new ZDataClass(data);
-  return Object.assign(res, data);
+type ZAdtRep<V extends "zvar" | "zobj", T extends ZObjType<T>> = [
+  V,
+  ZObjProxyType<T>,
+];
+
+type ZAdt_i<T extends ZAdtRep<any, any>, O, V> = T[0] extends "zobj" ? O : V;
+
+function zadtI<T extends ZAdtRep<any, any>, O, V>(
+  rep: T,
+  o: () => O,
+  v: () => V,
+): ZAdt_i<T, O, V> {
+  return (rep[0] === "zobj" ? o() : v()) as ZAdt_i<T, O, V>;
 }
 
-export function defZObj<T extends ZObjType<T>>(proxy: ZObjProxyType<T>) {
-  return ZObj<T>;
+function ZAdtRep<S extends "zobj" | "zvar">(o: S) {
+  return <T extends ZObjType<T>>(p: ZObjProxyType<T>) =>
+    [o, p] as ZAdtRep<S, T>;
+}
+
+export const defZObj = ZAdtRep<"zobj">("zobj");
+export const defZVar = ZAdtRep<"zvar">("zvar");
+
+export function mk<S extends "zobj" | "zvar", T extends ZObjType<T>>(
+  rep: ZAdtRep<S, T>,
+): ZAdt_i<
+  ZAdtRep<S, T>,
+  (t: T) => ZObj<T>,
+  { [K in keyof T]: (d: T[K]) => () => ZObjMeta<{ data: T[K] }> }
+> {
+  return zadtI(
+    rep,
+    () => (data: T) => {
+      const res = () =>
+        [data, new Map<IdLiteral, any>(), rep[1]] as ZObjMeta<T>;
+      return Object.assign(res, data) as ZObj<T>;
+    },
+    () => {
+      const res: {
+        [K in keyof T]: (d: T[K]) => () => ZObjMeta<{ data: T[K] }>;
+      } = {} as any;
+      for (const k in rep[1]) {
+        res[k] = (d: T[typeof k]) => {
+          const getMeta = () => [
+            { data: d },
+            new Map<IdLiteral, any>(),
+            { data: Proxy.Of<T[typeof k]>() },
+          ];
+          return Object.assign(getMeta, {
+            var: k,
+            data: d,
+          }) as any as () => ZObjMeta<{ data: T[typeof k] }>;
+        };
+      }
+      return res;
+    },
+  );
 }

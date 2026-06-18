@@ -9,7 +9,7 @@ type WorkOpts = {
 
 const BASE_SIZE = 100000;
 
-function doWork(workOpts: WorkOpts) {
+function doWork(workOpts: WorkOpts): [string, number] {
   const rng = $.psuedoRng(100);
   const randomInd = () => Math.floor(rng() * BASE_SIZE);
   let res = "";
@@ -82,11 +82,16 @@ function doWork2() {
   return doWork({ swaps, lookup });
 }
 
+const zo = $.Inc.defZObj({ a: $.Proxy.Of<number>(), b: $.Proxy.Of<string>() });
+const zv = $.Inc.defZVar({ a: $.Proxy.Of<number>(), b: $.Proxy.Of<string>() });
+
 describe("incremental", () => {
   it("should work", () => {
     const [res1, t1] = doWork1();
     const [res2, t2] = doWork2();
-    console.log(t1, t2);
     expect(res1).toBe(res2);
+    expect(t1).toBeGreaterThan(t2);
+    console.log("ZV", typeof $.Inc.mk(zv).b("1"));
+    expect($.Inc.mk(zo)({ a: 1, b: "2" }).a).toBe(1);
   });
 });

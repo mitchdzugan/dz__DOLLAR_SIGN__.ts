@@ -159,6 +159,12 @@ declare const fs: {
 };
 //#endregion
 //#region src/node.d.ts
+type NetworkControl = "use-cache" | "cache-only" | "force-fetch";
+declare const GQLNetworkControl: {
+  useCache: NetworkControl;
+  cacheOnly: NetworkControl;
+  forceFetch: NetworkControl;
+};
 type GqlQueryOpts = {
   apiUrl: string;
   queryName: string;
@@ -166,9 +172,9 @@ type GqlQueryOpts = {
   vars?: Record<string, string | number | boolean | null>;
   authToken?: string;
   log?: (...s: string[]) => void;
-  networkControl?: "use-cache" | "cache-only" | "force-fetch";
+  networkControl?: NetworkControl;
   cachePath?: string;
 };
 declare function gqlRequest(opts: GqlQueryOpts): Promise<any>;
 //#endregion
-export { fs, gqlRequest, path };
+export { GQLNetworkControl, NetworkControl, fs, gqlRequest, path };

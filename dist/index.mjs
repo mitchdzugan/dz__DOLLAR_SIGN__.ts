@@ -583,13 +583,20 @@ function simpleHash(str) {
 	return hash;
 }
 function assertNonNil(v, msg) {
-	if (v === void 0 || v === null) throw new Error(msg || "Nil value");
+	if (v === void 0 || v === null) throw new Error(msg || "unhandled nil value");
 }
 function envVar(varname, defaultValue) {
 	const rawVarval = process.env[varname];
 	const varval = rawVarval === void 0 ? defaultValue : rawVarval;
 	assertNonNil(varval, `No value for ENV VAR  [ ${varname} ]`);
 	return varval;
+}
+function psuedoRng(seed) {
+	let state = seed;
+	return function() {
+		state = (1664525 * state + 1013904223) % 4294967296;
+		return state / 4294967296;
+	};
 }
 //#endregion
 //#region src/rwse.ts
@@ -1021,8 +1028,19 @@ function DoSEA_(...args) {
 	return _DoA(...args);
 }
 //#endregion
+//#region src/proxy.ts
+var proxy_exports = /* @__PURE__ */ __exportAll({ Of: () => Of });
+function Of() {
+	return { __typeRef: (t) => t };
+}
+//#endregion
 //#region src/incremental.ts
-var incremental_exports = /* @__PURE__ */ __exportAll({ Ider: () => Ider });
+var incremental_exports = /* @__PURE__ */ __exportAll({
+	Ider: () => Ider,
+	defZObj: () => defZObj,
+	defZVar: () => defZVar,
+	mk: () => mk
+});
 function idKey(id) {
 	const valueString = id ? `${id}` : "";
 	return `${`${typeof id}`}|${valueString}`;
@@ -1077,14 +1095,18 @@ var BaseDict_r = class {
 	get changes() {
 		throw "unimplemented";
 	}
-	get changed() {
+	get isChanged() {
 		return this.changes.length > 0;
 	}
 };
 var MutatedDict = class MutatedDict extends BaseDict_r {
 	#base;
 	#mutations;
+	#changes = null;
 	#iterated;
+	#sizeDelta = 0;
+	#lookupCache = {};
+	#lookupCacheSize = 0;
 	constructor(base, mutater) {
 		super();
 		this.#base = base;
@@ -1100,15 +1122,22 @@ var MutatedDict = class MutatedDict extends BaseDict_r {
 	addMutation(k, m) {
 		const id = this.key(k);
 		const currMutation = this.#mutations[id];
+		const isDel = m[0] === "del";
 		if (currMutation) {
+			const wasDel = currMutation[2][0] === "del";
 			currMutation[3].push(currMutation[2]);
 			currMutation[2] = m;
-		} else this.#mutations[id] = [
-			k,
-			this.lookup(k),
-			m,
-			[]
-		];
+			this.#sizeDelta += isDel ? wasDel ? 0 : -1 : wasDel ? 1 : 0;
+		} else {
+			const currVal = this.#base.lookup(k);
+			this.#sizeDelta += currVal.case(() => isDel ? -1 : 0, () => isDel ? 0 : 1);
+			this.#mutations[id] = [
+				k,
+				currVal,
+				m,
+				[]
+			];
+		}
 	}
 	delete(k) {
 		this.addMutation(k, ["del"]);
@@ -1142,12 +1171,33 @@ var MutatedDict = class MutatedDict extends BaseDict_r {
 			setIterated(iterated);
 		})();
 	}
+	#lookupCached(_k, id) {
+		return Opt(this.#lookupCache[id]);
+	}
+	#lookupRaw(k, id) {
+		return Opt(this.#mutations[id]).case((mkv) => Opt(mkv[2][0] === "del" ? void 0 : mkv[2][1]), () => this.#base.lookup(k));
+	}
+	#lookupPreFull(k, id) {
+		const resVal = this.#lookupCached(k, id).case((v) => v, () => {
+			const rawRes = this.#lookupRaw(k, id);
+			this.#lookupCacheSize += rawRes.case(() => 1, () => 0);
+			return rawRes;
+		});
+		this.#lookupCache[id] = resVal;
+		return resVal;
+	}
 	lookup(k) {
-		this.key(k);
-		return Opt(void 0);
+		const id = this.key(k);
+		return this.#lookupPreFull(k, id);
 	}
 	mutate(mutater) {
 		return new MutatedDict(this, mutater);
+	}
+	get changes() {
+		return this.#changes ||= Object.values(this.#mutations);
+	}
+	get src() {
+		return this.#base;
 	}
 };
 var PureDict_r = class extends BaseDict_r {
@@ -1192,9 +1242,47 @@ var IderClass = class {
 	Dict(...entries) {
 		return new PureDict_r(this.#toId, entries);
 	}
+	id(t) {
+		return this.#toId(t);
+	}
 };
-function Ider(f) {
-	return new IderClass(f);
+const Ider = {
+	Lit: new IderClass((id) => id),
+	Num: new IderClass((id) => id),
+	Str: new IderClass((id) => id),
+	for: (f) => new IderClass(f)
+};
+function zadtI(rep, o, v) {
+	return rep[0] === "zobj" ? o() : v();
+}
+function ZAdtRep(o) {
+	return (p) => [o, p];
+}
+const defZObj = ZAdtRep("zobj");
+const defZVar = ZAdtRep("zvar");
+function mk(rep) {
+	return zadtI(rep, () => (data) => {
+		const res = () => [
+			data,
+			/* @__PURE__ */ new Map(),
+			rep[1]
+		];
+		return Object.assign(res, data);
+	}, () => {
+		const res = {};
+		for (const k in rep[1]) res[k] = (d) => {
+			const getMeta = () => [
+				{ data: d },
+				/* @__PURE__ */ new Map(),
+				{ data: Of() }
+			];
+			return Object.assign(getMeta, {
+				var: k,
+				data: d
+			});
+		};
+		return res;
+	});
 }
 //#endregion
 //#region src/interrupt.ts
@@ -1244,10 +1332,4 @@ function onInterrupt(f) {
 	};
 }
 //#endregion
-//#region src/proxy.ts
-var proxy_exports = /* @__PURE__ */ __exportAll({ Of: () => Of });
-function Of() {
-	return { __typeRef: (t) => t };
-}
-//#endregion
-export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Maybe, None, Ok, proxy_exports as Proxy, SSBM, Set$1 as Set, Some, _map, _or, _without, ask, asks, assertNonNil, catching, chunk, dec, enc, envVar, exec, execAndExit, execAsync, fail, firsty, get, gets, iMaybe, isNil, isNotNil, maybe, mutate, or, pure, put, r, reading, rs, rw, rws, s, simpleHash, stating, tell, timeout, w, waitFor, withInd, writing, ws };
+export { $, $$, $$_, DoE, DoEA, DoEA_, DoE_, DoR, DoRA, DoRA_, DoRE, DoREA, DoREA_, DoRE_, DoRS, DoRSA, DoRSA_, DoRSE, DoRSEA, DoRSEA_, DoRSE_, DoRS_, DoRW, DoRWA, DoRWA_, DoRWE, DoRWEA, DoRWEA_, DoRWE_, DoRWS, DoRWSA, DoRWSA_, DoRWSE, DoRWSEA, DoRWSEA_, DoRWSE_, DoRWS_, DoRW_, DoR_, DoS, DoSA, DoSA_, DoSE, DoSEA, DoSEA_, DoSE_, DoS_, DoW, DoWA, DoWA_, DoWE, DoWEA, DoWEA_, DoWE_, DoWS, DoWSA, DoWSA_, DoWSE, DoWSEA, DoWSEA_, DoWSE_, DoWS_, DoW_, Err, id_exports as Id, incremental_exports as Inc, interrupt_exports as Int, Maybe, None, Ok, proxy_exports as Proxy, SSBM, Set$1 as Set, Some, _map, _or, _without, ask, asks, assertNonNil, catching, chunk, dec, enc, envVar, exec, execAndExit, execAsync, fail, firsty, get, gets, iMaybe, isNil, isNotNil, maybe, mutate, or, psuedoRng, pure, put, r, reading, rs, rw, rws, s, simpleHash, stating, tell, timeout, w, waitFor, withInd, writing, ws };
