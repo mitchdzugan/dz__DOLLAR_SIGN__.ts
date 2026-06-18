@@ -621,7 +621,7 @@ async function gqlRequest(opts) {
 	})());
 	function getQpathCached() {
 		assertNonNil(cachePath);
-		return path.join(cachePath, `${queryName}.${qkey}`);
+		return path.join(cachePath, `${queryName}.${qkey}.json`);
 	}
 	const cached = await (async () => {
 		try {
