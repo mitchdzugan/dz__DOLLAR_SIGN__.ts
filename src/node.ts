@@ -77,7 +77,7 @@ export async function gqlRequest(opts: GqlQueryOpts) {
   }
 
   try {
-    await fs.rename(getQpathCachedOld(), getQpathCachedOld());
+    await fs.rename(getQpathCachedOld(), getQpathCached());
   } catch (_) {}
 
   const cached = await (async () => {

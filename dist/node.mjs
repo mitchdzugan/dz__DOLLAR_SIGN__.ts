@@ -634,7 +634,7 @@ async function gqlRequest(opts) {
 		return path.join(cachePath, `${queryName}.${qkey}.json`);
 	}
 	try {
-		await fs.rename(getQpathCachedOld(), getQpathCachedOld());
+		await fs.rename(getQpathCachedOld(), getQpathCached());
 	} catch (_) {}
 	const cached = await (async () => {
 		try {
