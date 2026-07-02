@@ -67,17 +67,24 @@ export async function gqlRequest(opts: GqlQueryOpts) {
     })(),
   );
 
-  function getQpathCachedOld(): string {
+  function getQpathCachedOld_1(): string {
     $.assertNonNil(cachePath);
     return path.join(cachePath, `${queryName}.${qkeyOld}.json`);
   }
-  function getQpathCached(): string {
+  function getQpathCachedOld_2(): string {
     $.assertNonNil(cachePath);
     return path.join(cachePath, `${queryName}.${qkey}.json`);
   }
+  function getQpathCached(): string {
+    $.assertNonNil(cachePath);
+    return path.join(cachePath, `${qkey}.json`);
+  }
 
   try {
-    await fs.rename(getQpathCachedOld(), getQpathCached());
+    await fs.rename(getQpathCachedOld_1(), getQpathCached());
+  } catch (_) {}
+  try {
+    await fs.rename(getQpathCachedOld_2(), getQpathCached());
   } catch (_) {}
 
   const cached = await (async () => {

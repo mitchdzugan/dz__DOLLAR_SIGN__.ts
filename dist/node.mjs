@@ -625,16 +625,23 @@ async function gqlRequest(opts) {
 		for (const key of keys) qkey_ += `|${vars[key]}`;
 		return qkey_;
 	})());
-	function getQpathCachedOld() {
+	function getQpathCachedOld_1() {
 		assertNonNil(cachePath);
 		return path.join(cachePath, `${queryName}.${qkeyOld}.json`);
 	}
-	function getQpathCached() {
+	function getQpathCachedOld_2() {
 		assertNonNil(cachePath);
 		return path.join(cachePath, `${queryName}.${qkey}.json`);
 	}
+	function getQpathCached() {
+		assertNonNil(cachePath);
+		return path.join(cachePath, `${qkey}.json`);
+	}
 	try {
-		await fs.rename(getQpathCachedOld(), getQpathCached());
+		await fs.rename(getQpathCachedOld_1(), getQpathCached());
+	} catch (_) {}
+	try {
+		await fs.rename(getQpathCachedOld_2(), getQpathCached());
 	} catch (_) {}
 	const cached = await (async () => {
 		try {
