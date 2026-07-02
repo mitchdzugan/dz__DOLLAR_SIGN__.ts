@@ -42,7 +42,7 @@ export async function gqlRequest(opts: GqlQueryOpts) {
   if (keys.length === 2 && keys[0] === "page" && keys[1] === "phaseGroupId") {
     keys.reverse();
   }
-  const qkey = $.simpleHash(
+  const qkeyOld = $.simpleHash(
     (() => {
       let qkey_ = `${query}|${queryName}`;
       if (keys.length === 0) {
@@ -54,11 +54,31 @@ export async function gqlRequest(opts: GqlQueryOpts) {
       return qkey_;
     })(),
   );
+  const qkey = $.simpleHash(
+    (() => {
+      let qkey_ = `${query}`;
+      if (keys.length === 0) {
+        return `${qkey_}|`;
+      }
+      for (const key of keys) {
+        qkey_ += `|${vars[key]}`;
+      }
+      return qkey_;
+    })(),
+  );
 
+  function getQpathCachedOld(): string {
+    $.assertNonNil(cachePath);
+    return path.join(cachePath, `${queryName}.${qkeyOld}.json`);
+  }
   function getQpathCached(): string {
     $.assertNonNil(cachePath);
     return path.join(cachePath, `${queryName}.${qkey}.json`);
   }
+
+  try {
+    await fs.rename(getQpathCachedOld(), getQpathCachedOld());
+  } catch (_) {}
 
   const cached = await (async () => {
     try {
