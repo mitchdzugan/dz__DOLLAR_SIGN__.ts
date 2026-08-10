@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import * as $ from "./index.js";
-import { type Draft } from "mutative";
 
 const impl: <T>(t: T) => $.RWS<{ k: string }, string, T[], string> = (<T>() =>
   $.DoRWS<{ k: string }, string, T[], string, [T]>(function* (M, t) {
     yield* M.tell("getK");
-    yield* M.mutate((s) => s.push(t as Draft<T>));
+    yield* M.mutate((s) => s.push(t as $.Arg1<typeof s.push>));
     const { k } = yield* M.ask();
     yield* M.tell(`k=[${k}]`);
     // yield* M.fail(23);
@@ -68,9 +67,11 @@ describe("rwse", () => {
     expect(res2.res).toBe("420|69");
   });
   it("should work async", async () => {
-    const res = await $.rws({ k: "v" }, (...s: string[]) => s.join(" "), [
-      420,
-    ]).execAsync(implA(69));
+    const res = await $.rws(
+      { k: "v" },
+      (...s: string[]) => s.join(" "),
+      [420],
+    ).execAsync(implA(69));
     expect(res.written).toBe("getK k=[v]");
     expect(res.res).toBe("420|69");
   });

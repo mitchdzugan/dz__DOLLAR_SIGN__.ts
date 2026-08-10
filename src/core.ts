@@ -1,9 +1,17 @@
+import { Character } from "@slippi/slippi-js";
 import * as YAML from "js-yaml";
 import * as Slp from "./slp.js";
-import { Character } from "@slippi/slippi-js";
-import RawSetClass from "./RawSetClass";
+import RawSetClass from "./RawSetClass.js";
+import { type IdLiteral } from "./id.js";
 
-export const enc = YAML.dump;
+type EncodeOpts = { yaml?: boolean };
+
+export function enc<T extends object>(t: T, opts: EncodeOpts = {}): string {
+  if (opts.yaml) {
+    return YAML.dump(t);
+  }
+  return JSON.stringify(t);
+}
 export const dec = YAML.load;
 
 export type Nil = null | undefined;
@@ -234,4 +242,35 @@ export function chunk<T>(a: T[], chunkSize: number = 100): T[][] {
     res.push([...a.slice(i, i + 100)]);
   }
   return res;
+}
+
+export function simpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return hash;
+}
+
+export function assertNonNil<T>(v: Nilable<T>, msg?: string): asserts v is T {
+  if (v === undefined || v === null) {
+    throw new Error(msg || "unhandled nil value");
+  }
+}
+
+export function envVar(varname: string, defaultValue?: string): string {
+  const rawVarval = process.env[varname];
+  const varval = rawVarval === undefined ? defaultValue : rawVarval;
+  assertNonNil(varval, `No value for ENV VAR  [ ${varname} ]`);
+  return varval;
+}
+
+export function psuedoRng(seed: number) {
+  let state = seed;
+  return function () {
+    state = (1664525 * state + 1013904223) % 4294967296;
+    return state / 4294967296;
+  };
 }

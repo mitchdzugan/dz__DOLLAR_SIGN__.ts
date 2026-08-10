@@ -1,9 +1,10 @@
 import * as nodeFs from "node:fs/promises";
+import * as nodePath from "node:path";
 import * as fs0 from "fs";
 import * as stream0 from "stream";
 import * as events0 from "events";
 
-//#region src/node.d.ts
+//#region src/node_core.d.ts
 declare function imageToBase64DataUrl(filePath: string, mimeType: string): Promise<string>;
 declare function exists(path: string): Promise<boolean>;
 type PathBuilder = ((...args: string[]) => string) & {
@@ -22,10 +23,28 @@ type AppPathOpts = {
   asDataSubdir?: Set<keyof AppPathBuilders>;
 };
 declare function AppPathBuilders(appName: string, opts?: AppPathOpts): AppPathBuilders;
+declare const path: {
+  normalize(path: string): string;
+  join(...paths: string[]): string;
+  resolve(...paths: string[]): string;
+  matchesGlob(path: string, pattern: string): boolean;
+  isAbsolute(path: string): boolean;
+  relative(from: string, to: string): string;
+  dirname(path: string): string;
+  basename(path: string, suffix?: string): string;
+  extname(path: string): string;
+  sep: "\\" | "/";
+  delimiter: ";" | ":";
+  parse(path: string): nodePath.ParsedPath;
+  format(pathObject: nodePath.FormatInputPathObject): string;
+  toNamespacedPath(path: string): string;
+  posix: nodePath.PlatformPath;
+  win32: nodePath.PlatformPath;
+};
 declare const fs: {
   imageToBase64DataUrl: typeof imageToBase64DataUrl;
   exists: typeof exists;
-  readString: (p: string) => Promise<string | void>;
+  readString: (p: string) => Promise<string | undefined>;
   writeString: (p: string, c: string) => Promise<void>;
   slurp: <T extends Object>(p: string) => Promise<T | undefined>;
   slurp1stCfg: <T extends Object>(p: string) => Promise<T | undefined>;
@@ -139,4 +158,23 @@ declare const fs: {
   constants: typeof fs0.constants;
 };
 //#endregion
-export { fs };
+//#region src/node.d.ts
+type NetworkControl = "use-cache" | "cache-only" | "force-fetch";
+declare const GQLNetworkControl: {
+  useCache: NetworkControl;
+  cacheOnly: NetworkControl;
+  forceFetch: NetworkControl;
+};
+type GqlQueryOpts = {
+  apiUrl: string;
+  queryName: string;
+  queryDir: string;
+  vars?: Record<string, string | number | boolean | null>;
+  authToken?: string;
+  log?: (...s: string[]) => void;
+  networkControl?: NetworkControl;
+  cachePath?: string;
+};
+declare function gqlRequest(opts: GqlQueryOpts): Promise<any>;
+//#endregion
+export { GQLNetworkControl, NetworkControl, fs, gqlRequest, path };
